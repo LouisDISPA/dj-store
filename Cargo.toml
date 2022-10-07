@@ -1,0 +1,13 @@
+[package]
+name = "dj-store"
+version = "0.1.0"
+edition = "2021"
+build = "src/build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.5"
+mime_guess = "2"
+rust-embed = { version = "6", features = ["axum"] }
+tokio = { version = "1", features = ["full"] }
