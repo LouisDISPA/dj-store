@@ -6,7 +6,6 @@ stages:
 
 lint_ui:
   stage: lint
-  allow_failure: true
   image: node:18
   # TODO: install a personal gitlab runner to enable cache
   # cache:
@@ -15,10 +14,9 @@ lint_ui:
   #         - ui/yarn.lock
   #     paths:
   #       - ui/node_modules/
-  before_script:
+  script:
     - cd ui/
     - yarn
-  script:
     - yarn check
     - yarn lint
 
@@ -32,8 +30,10 @@ build_ui:
   #     paths:
   #       - ui/node_modules/
   dependencies: 
-    - lint_ui
+    - lint_ui 
   script:
+    - cd ui/
+    - yarn
     - yarn build
 
 
@@ -41,6 +41,7 @@ lint_server:
   stage: lint
   image: rust:latest
   script:
+    - rustup component add clippy fmt
     - cargo clippy -- -D warnings
     - cargo cargo fmt -- --check
 
