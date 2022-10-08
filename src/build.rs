@@ -1,7 +1,6 @@
 use std::{path::Path, process::Command};
 
 fn main() {
-
     // Detect if the ui is built, if not we build it
     // Don't check for changes on the ui code
     if !Path::new("./ui/build/index.html").exists() {
