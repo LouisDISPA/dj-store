@@ -1,0 +1,28 @@
+default: 
+  image: node:18
+  before_script:
+    - cd ui/
+    - yarn
+
+include:
+  - template: Jobs/Code-Quality.gitlab-ci.yml
+
+stages:
+  - lint
+  - build
+
+lint_ui:
+  stage: lint
+  allow_failure: true
+  script:
+    - yarn check
+    - yarn lint
+
+code_quality:
+  stage: lint
+
+build_ui:
+  stage: build
+  script:
+    - yarn build
+
