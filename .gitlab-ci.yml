@@ -1,6 +1,3 @@
-include:
-  - template: Jobs/Code-Quality.gitlab-ci.yml
-
 stages:
   - lint
   - build
@@ -9,12 +6,13 @@ lint_ui:
   stage: lint
   allow_failure: true
   image: node:18
-  cache:
-    - key:
-        files:
-          - ui/yarn.lock
-      paths:
-        - ui/node_modules/
+  # TODO: install a personal gitlab runner to enable cache
+  # cache:
+  #   - key:
+  #       files:
+  #         - ui/yarn.lock
+  #     paths:
+  #       - ui/node_modules/
   before_script:
     - cd ui/
     - yarn
@@ -22,19 +20,15 @@ lint_ui:
     - yarn check
     - yarn lint
 
-code_quality:
-  stage: lint
-  services:
-
 build_ui:
   stage: build
   image: node:18
-  cache:
-    - key:
-        files:
-          - ui/yarn.lock
-      paths:
-        - ui/node_modules/
+  # cache:
+  #   - key:
+  #       files:
+  #         - ui/yarn.lock
+  #     paths:
+  #       - ui/node_modules/
   before_script:
     - cd ui/
     - yarn
