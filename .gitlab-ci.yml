@@ -41,7 +41,7 @@ lint_server:
   stage: lint
   image: rust:latest
   script:
-    - rustup component add clippy fmt
+    - rustup component add clippy rustfmt
     - cargo clippy -- -D warnings
     - cargo cargo fmt -- --check
 
