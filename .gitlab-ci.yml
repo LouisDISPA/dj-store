@@ -29,7 +29,7 @@ build_ui:
   #         - ui/yarn.lock
   #     paths:
   #       - ui/node_modules/
-  dependencies: 
+  needs: 
     - lint_ui 
   script:
     - cd ui/
@@ -48,7 +48,7 @@ lint_server:
 build_server:
   stage: build
   image: rust:latest
-  dependencies: 
+  needs: 
     - lint_server
   script:
     - cargo build
@@ -56,7 +56,7 @@ build_server:
 test_server:
   stage: test
   image: rust:latest
-  dependencies: 
+  needs: 
     - build_server
   script:
     - cargo test
