@@ -18,6 +18,7 @@ lint_ui:
 
 code_quality:
   stage: lint
+  services:
 
 build_ui:
   stage: build
