@@ -9,6 +9,12 @@ lint_ui:
   stage: lint
   allow_failure: true
   image: node:18
+  cache:
+    - key:
+        files:
+          - ui/yarn.lock
+      paths:
+        - ui/node_modules/
   before_script:
     - cd ui/
     - yarn
@@ -23,6 +29,12 @@ code_quality:
 build_ui:
   stage: build
   image: node:18
+  cache:
+    - key:
+        files:
+          - ui/yarn.lock
+      paths:
+        - ui/node_modules/
   before_script:
     - cd ui/
     - yarn
