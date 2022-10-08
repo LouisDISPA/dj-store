@@ -43,7 +43,7 @@ lint_server:
   script:
     - rustup component add clippy rustfmt
     - cargo clippy -- -D warnings
-    - cargo cargo fmt -- --check
+    - cargo fmt -- --check
 
 build_server:
   stage: build
