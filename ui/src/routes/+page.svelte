@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Button from './Button.svelte';
-	import CodeInput from './CodeInput.svelte';
+	import PassCode from './PassCode.svelte';
 	let input = '';
 	let loading = false;
 
@@ -20,7 +20,7 @@
 <div id="page">
 	<h1>Enter a code</h1>
 	<form on:submit|preventDefault={goToPage}>
-		<CodeInput bind:input />
+		<PassCode bind:input />
 		<Button label="Connect" />
 	</form>
 	{#if loading}
