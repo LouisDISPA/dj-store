@@ -1,6 +1,8 @@
 stages:
   - lint
   - build
+  - test
+
 
 lint_ui:
   stage: lint
@@ -29,9 +31,31 @@ build_ui:
   #         - ui/yarn.lock
   #     paths:
   #       - ui/node_modules/
-  before_script:
-    - cd ui/
-    - yarn
+  dependencies: 
+    - lint_ui
   script:
     - yarn build
 
+
+lint_server:
+  stage: lint
+  image: rust:latest
+  script:
+    - cargo clippy -- -D warnings
+    - cargo cargo fmt -- --check
+
+build_server:
+  stage: build
+  image: rust:latest
+  dependencies: 
+    - lint_server
+  script:
+    - cargo build
+
+test_server:
+  stage: test
+  image: rust:latest
+  dependencies: 
+    - build_server
+  script:
+    - cargo test
