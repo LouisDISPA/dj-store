@@ -1,14 +1,44 @@
 <script lang="ts">
-	// export let params: { slug: string };
+	import { goto } from '$app/navigation';
+	import Button from './Button.svelte';
+	import CodeInput from './CodeInput.svelte';
+	let input = '';
+	let loading = false;
+
+	function goToPage() {
+		if (input.length !== 6) {
+			input = '';
+			return;
+		}
+		loading = true;
+		goto('/' + input).then(() => {
+			loading = false;
+		});
+	}
 </script>
 
-<h1>Welcome to Home</h1>
-<p>Visit <a href="/code-secret">code page</a></p>
+<div id="page">
+	<h1>Enter a code</h1>
+	<form on:submit|preventDefault={goToPage}>
+		<CodeInput bind:input />
+		<Button label="Connect" />
+	</form>
+	{#if loading}
+		<p>loading...</p>
+	{/if}
+	<Button label="Scan QR Code" onSubmit={() => goto('/scan')} />
+</div>
 
 <style lang="sass">
-h1
-	color: red
-
-p
-	color: blue
+div#page
+	display: flex
+	flex-direction: column
+	align-items: center
+	justify-content: center
+	height: 50vh
+form
+	display: flex
+	flex-direction: column
+	align-items: center
+	justify-content: center
 </style>
