@@ -1,3 +1,10 @@
+<script lang="ts" context="module">
+	export async function load({ params }: { params: { code: string } }) {
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		return { code: params.code };
+	}
+</script>
+
 <script lang="ts">
 	export let data: { code: string };
 </script>

@@ -8,7 +8,7 @@
 	}
 </script>
 
-<button on:click={submit}>{label}</button>
+<button type="button" on:click={submit}>{label}</button>
 
 <style lang="sass">
 button

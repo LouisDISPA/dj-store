@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	/**
+	 * The pass code. This is a string of 6 capital letters.
+	 * You need to bind input to get the value.
+	 * ```svelte
+	 * <PassCode bind:input />
+	 * ```
+	 */
 	export let input: string;
 
 	const codeSize = 6;
