@@ -13,12 +13,13 @@
 
 <style lang="sass">
 button
-    margin-top: 20px
-    padding: 10px 20px
-    font-size: 20px
+    margin: 15px
+    padding: 15px 25px
+    font-size: 25px
+    font-weight: bold
     color: white
     border: 1px solid #ccc
-    border-radius: 5px
+    border-radius: 20px
     background: #555
     cursor: pointer
 

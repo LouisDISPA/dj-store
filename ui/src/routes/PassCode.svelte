@@ -109,6 +109,7 @@
 		}
 	}
 
+	// Focus the first input on mount
 	onMount(() => {
 		const input = document.getElementById(inputIds[0]) as HTMLInputElement;
 		input.focus();
@@ -142,13 +143,13 @@
     flex-wrap: wrap
 
 .passcode-block 
-    padding: 0 1rem
+    padding: 10px 20px
 
 .passcode-block > input
     border: 2px solid #d6d6d6
     border-radius: 4px
     padding: 0
-    margin: 20px 6px 0
+    margin: 10px
     width: 65px
     height: 65px
     text-align: center
