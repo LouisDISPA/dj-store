@@ -21,7 +21,7 @@
 	<h1>Enter a code</h1>
 	<PassCode bind:input />
 	<Button label="Connect" onSubmit={goToPage} />
-	<Button label="Scan QR Code" onSubmit={() => goto('/scan')} />
+	<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
 </div>
 
 <style lang="sass">
