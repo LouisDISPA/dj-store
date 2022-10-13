@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Button from '$lib/Button.svelte';
 	import PassCode from '$lib/PassCode.svelte';
+	import { env } from '$lib/env';
 	let input = '';
 	let loading = false;
 	function goToPage() {
@@ -10,7 +11,7 @@
 			return;
 		}
 		loading = true;
-		goto('/r/' + input).then(() => {
+		goto(env.BASE_HREF + '/r/' + input).then(() => {
 			loading = false;
 		});
 	}

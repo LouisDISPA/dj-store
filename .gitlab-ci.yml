@@ -45,7 +45,7 @@ pages:
   script:
     - cd ui/
     - yarn
-    - export BASE_HREF="/dj-store" && yarn build
+    - export VITE_BASE_HREF="/dj-store" && yarn build
     - cp -r build/* ../public
   artifacts:
     paths:

@@ -14,8 +14,9 @@ const config = {
 			fallback: 'index.html'
 		}),
 		paths: {
-			base: process.env.BASE_HREF || ''
-		}
+			base: process.env.VITE_BASE_HREF || ''
+		},
+		trailingSlash: 'ignore'
 	}
 };
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { env } from '$lib/env';
 	export let direction: 'horizontal' | 'vertical';
 
 	let menuItems = [
@@ -10,7 +11,7 @@
 <ul class={'menu ' + (direction === 'horizontal' ? 'menu-horizontal' : '')}>
 	{#each menuItems as item}
 		<li>
-			<a href={item.href} class="normal-case text-xl">{item.label}</a>
+			<a href={env.BASE_HREF + item.href} class="normal-case text-xl">{item.label}</a>
 		</li>
 	{/each}
 </ul>
