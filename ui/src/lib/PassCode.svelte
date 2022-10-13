@@ -57,7 +57,36 @@
 		return document.getElementById(inputIds[index - 1]) as HTMLInputElement;
 	}
 
-	// Check for backspace, ctrl + backspace, and arrow keys
+	// Go to the next input when the current input is full
+	// mobile works only with this
+	function handleInput(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const value = target.value;
+
+		if (value.length > 1) {
+			target.value = value[1].toUpperCase();
+		}
+
+		if (value === '') {
+			return;
+		}
+
+		updateInput();
+
+		const nextElement = nextInput(target.id);
+		if (nextElement) {
+			nextElement.focus();
+		} else {
+			// If there is no next element and we are on a mobile device
+			// we can hide the keyboard so the user can see the button
+			if (navigator.userAgent.includes('Mobile')) {
+				target.blur();
+			}
+		}
+	}
+
+	// Check for backspace, ctrl + backspace, arrow keys and letters
+	// And move the cursor accordingly
 	function keyDown(event: KeyboardEvent) {
 		event.preventDefault();
 		const key = event.key;
@@ -129,6 +158,7 @@
 					spellcheck="false"
 					maxlength="1"
 					class="input input-bordered w-20 h-20 text-4xl text-center shadow-lg"
+					on:input={handleInput}
 					on:keydown={keyDown}
 				/>
 			{/each}
