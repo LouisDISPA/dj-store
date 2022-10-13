@@ -2,13 +2,11 @@
 	export let data: { code: string };
 </script>
 
-<h1>hey you are on the code page: {data.code}</h1>
-<p>Visit <a href="/">Home</a></p>
-
-<style lang="sass">
-h1
-	color: red
-
-p
-	color: blue
-</style>
+<div class="hero my-10">
+	<div class="hero-content text-center">
+		<div class="max-w-md">
+			<h1 class="text-5xl font-bold">{data.code}</h1>
+			<p class="py-6">This page is not done yet !</p>
+		</div>
+	</div>
+</div>

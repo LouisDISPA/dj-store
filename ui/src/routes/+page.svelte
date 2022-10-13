@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Button from '$lib/Button.svelte';
 	import PassCode from '$lib/PassCode.svelte';
-	import { env } from '$lib/env';
+	import { goto } from '$lib/utils';
 	let input = '';
 	let loading = false;
 	function goToPage() {
@@ -11,7 +10,7 @@
 			return;
 		}
 		loading = true;
-		goto(env.BASE_HREF + '/r/' + input).then(() => {
+		goto('/r/' + input).then(() => {
 			loading = false;
 		});
 	}
@@ -21,8 +20,8 @@
 	<h1 class="text-2xl font-bold p-2">Enter a code</h1>
 	<PassCode bind:input onSubmit={goToPage} />
 	<div>
-		<Button label="Connect" onSubmit={goToPage} {loading} />
 		<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
+		<Button label="Connect" onSubmit={goToPage} {loading} />
 	</div>
 </div>
 
@@ -31,6 +30,6 @@ div#page
 	display: flex
 	flex-direction: column
 	align-items: center
-	justify-content: center
-	height: 35rem
+	justify-content: flex-end
+	height: 400px
 </style>

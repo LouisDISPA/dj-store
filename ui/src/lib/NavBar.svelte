@@ -1,16 +1,14 @@
 <script>
 	import Dropdown from './Dropdown.svelte';
 	import Menu from './Menu.svelte';
-	import { env } from '$lib/env';
+	import { env, goto } from '$lib/utils';
 </script>
 
-<div class="navbar shadow-lg justify-between">
-	<div class="btn btn-ghost px-1 no-animation">
-		<a href="{env.BASE_HREF}/" class="normal-case text-xl"
-			><img src="{env.BASE_HREF}/favicon.png" class="inline-block w-10 h-10 mr-3" alt="logo" />DJ
-			Store</a
-		>
-	</div>
+<div class="navbar shadow-lg justify-between bg-base-200">
+	<button class="btn btn-ghost px-1 no-animation normal-case text-xl" on:click={() => goto('/')}>
+		<img src="{env.BASE_HREF}/favicon.png" class="inline-block w-10 h-10 mr-3" alt="logo" />
+		<h1>DJ Store</h1>
+	</button>
 	<div class="md:hidden">
 		<Dropdown>
 			<span slot="label">
@@ -28,7 +26,7 @@
 			</span>
 		</Dropdown>
 	</div>
-	<div class="hidden md:block">
+	<div class="hidden md:block mr-3">
 		<Menu direction="horizontal" />
 	</div>
 </div>

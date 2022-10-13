@@ -57,70 +57,58 @@
 		return document.getElementById(inputIds[index - 1]) as HTMLInputElement;
 	}
 
-	// Go to the next input when the current input is full
-	function handleInput(event: Event) {
-		const target = event.target as HTMLInputElement;
-		const value = target.value;
-		if (value.length > 1) {
-			target.value = value[1];
-		}
-
-		updateInput();
-
-		if (value === '') {
-			return;
-		}
-		const nextElement = nextInput(target.id);
-		if (nextElement) {
-			nextElement.focus();
-		} else {
-			// If there is no next element and we are on a mobile device
-			// we can hide the keyboard so the user can see the button
-			if (navigator.userAgent.includes('Mobile')) {
-				target.blur();
-			}
-		}
-	}
-
 	// Check for backspace, ctrl + backspace, and arrow keys
 	function keyDown(event: KeyboardEvent) {
+		event.preventDefault();
+		const key = event.key;
 		const target = event.target as HTMLInputElement;
 		const previousElement = previousInput(target.id);
 		const nextElement = nextInput(target.id);
 
-		//Right Arrow Key
-		if (event.keyCode === 39) {
-			nextElement?.focus();
-		}
+		switch (key) {
+			case 'ArrowRight':
+				nextElement?.focus();
+				break;
 
-		//Left Arrow Key
-		//Add Highlight
-		if (event.keyCode === 37) {
-			previousElement?.focus();
-		}
-
-		// ctrl + Backspace Key
-		if (event.keyCode === 8 && event.ctrlKey) {
-			const inputs = getInputElements();
-			for (const innerElem of inputs) {
-				innerElem.value = '';
-			}
-			inputs[0].focus();
-		}
-
-		// Backspace Key
-		if (event.keyCode === 8 && !event.ctrlKey) {
-			if (target.value === '') {
+			case 'ArrowLeft':
 				previousElement?.focus();
-				return;
-			}
-			target.value = '';
+				break;
+
+			case 'Backspace':
+				if (event.ctrlKey) {
+					const inputs = getInputElements();
+					for (const innerElem of inputs) {
+						innerElem.value = '';
+					}
+					inputs[0].focus();
+				} else if (target.value === '' && previousElement) {
+					previousElement.value = '';
+					previousElement.focus();
+				} else {
+					target.value = '';
+				}
+				break;
+
+			case 'Enter':
+				onSubmit?.();
+				break;
+
+			default:
+				// If the key is a letter, put it in the input
+				if (key.length === 1 && key.match(/[A-Za-z]/)) {
+					target.value = key.toLocaleUpperCase();
+					if (nextElement) {
+						nextElement.focus();
+						// If there is no next element and we are on a mobile device
+						// we can hide the keyboard so the user can see the button
+					} else if (navigator.userAgent.includes('Mobile')) {
+						target.blur();
+					}
+				}
+				break;
 		}
 
-		// Enter Key
-		if (event.keyCode === 13) {
-			if (onSubmit) onSubmit();
-		}
+		updateInput();
 	}
 
 	// Focus the first input on mount
@@ -141,7 +129,6 @@
 					spellcheck="false"
 					maxlength="1"
 					class="input input-bordered w-20 h-20 text-4xl text-center shadow-lg"
-					on:input={handleInput}
 					on:keydown={keyDown}
 				/>
 			{/each}
