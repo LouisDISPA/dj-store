@@ -61,16 +61,18 @@
 	// mobile works only with this
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
-		const value = target.value;
+		let value = target.value;
 
 		if (value.length > 1) {
-			target.value = value[1].toUpperCase();
+			value = value[1];
 		}
 
-		if (value === '') {
+		if (value === '' || !value.match(/[A-Za-z]/)) {
+			target.value = '';
 			return;
 		}
 
+		target.value = value.toUpperCase();
 		updateInput();
 
 		const nextElement = nextInput(target.id);
