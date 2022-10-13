@@ -2,6 +2,7 @@ stages:
   - lint
   - build
   - test
+  - deploy
 
 
 lint_ui:
@@ -36,6 +37,19 @@ build_ui:
     - yarn
     - yarn build
 
+pages:
+  stage: deploy
+  image: node:18
+  needs: 
+    - build_ui
+  script:
+    - cd ui/
+    - yarn
+    - yarn build
+    - cp -r build/* ../public
+  artifacts:
+    paths:
+      - public
 
 lint_server:
   stage: lint
