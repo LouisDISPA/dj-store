@@ -10,4 +10,5 @@ build = "src/build.rs"
 axum = "0.5"
 mime_guess = "2"
 rust-embed = { version = "6", features = ["axum"] }
+serde = { version = "1.0.145", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }

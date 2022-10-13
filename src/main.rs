@@ -1,26 +1,20 @@
 use axum::{
     body::{boxed, Full},
-    extract::{rejection::PathRejection, Path},
+    extract::Path,
     http::{header, StatusCode, Uri},
     response::{IntoResponse, Response},
     routing::{get, Router},
+    Json,
 };
 use rust_embed::RustEmbed;
+use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
 #[tokio::main]
 async fn main() {
     // Define our app routes, including a fallback option for anything not matched.
 
-    let api_router = Router::new()
-        .route("/hello", get(|| async { "Hello, World!" }))
-        .route("/", get(|| async { "api index" }))
-        .route(
-            "/:test",
-            get(
-                |test: Result<Path<u8>, PathRejection>| async move { format!("Hello, {:?}", test) },
-            ),
-        );
+    let api_router = Router::new().route("/:room/votes", get(get_votes));
 
     let app = Router::new()
         .route("/_app/*file", get(static_handler))
@@ -35,6 +29,57 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+#[derive(Serialize, Deserialize)]
+struct Votes {
+    music: Music,
+    count: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Music {
+    id: String,
+    name: String,
+    artist: String,
+}
+
+enum GetVotesError {
+    NotFound,
+}
+
+impl IntoResponse for GetVotesError {
+    fn into_response(self) -> Response {
+        match self {
+            GetVotesError::NotFound => (StatusCode::NOT_FOUND, "Not Found"),
+        }
+        .into_response()
+    }
+}
+
+async fn get_votes(Path(room): Path<String>) -> Result<Json<Vec<Votes>>, GetVotesError> {
+    if room == "error" {
+        return Err(GetVotesError::NotFound);
+    }
+
+    Ok(Json(vec![
+        Votes {
+            music: Music {
+                id: "1".to_string(),
+                name: "music1".to_string(),
+                artist: "artist1".to_string(),
+            },
+            count: 1,
+        },
+        Votes {
+            music: Music {
+                id: "2".to_string(),
+                name: "music2".to_string(),
+                artist: "artist2".to_string(),
+            },
+            count: 2,
+        },
+    ]))
 }
 
 // We use static route matchers ("/" and "/index.html") to serve our home
