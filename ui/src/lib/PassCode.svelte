@@ -10,6 +10,11 @@
 	 */
 	export let input: string;
 
+	/**
+	 * The function to call when the user presses enter.
+	 */
+	export let onSubmit: (() => void) | undefined = undefined;
+
 	const codeSize = 6;
 	const inputIds = [...Array(codeSize).keys()].map((i) => `input-${i}`);
 
@@ -69,7 +74,11 @@
 		if (nextElement) {
 			nextElement.focus();
 		} else {
-			target.blur();
+			// If there is no next element and we are on a mobile device
+			// we can hide the keyboard so the user can see the button
+			if (navigator.userAgent.includes('Mobile')) {
+				target.blur();
+			}
 		}
 	}
 
@@ -107,6 +116,11 @@
 			}
 			target.value = '';
 		}
+
+		// Enter Key
+		if (event.keyCode === 13) {
+			if (onSubmit) onSubmit();
+		}
 	}
 
 	// Focus the first input on mount
@@ -126,6 +140,7 @@
 					autocomplete="off"
 					spellcheck="false"
 					maxlength="1"
+					class="input input-bordered w-20 h-20 text-4xl text-center shadow-lg"
 					on:input={handleInput}
 					on:keydown={keyDown}
 				/>
@@ -146,21 +161,6 @@
     padding: 10px 20px
 
 .passcode-block > input
-    border: 2px solid #d6d6d6
-    border-radius: 4px
-    padding: 0
     margin: 10px
-    width: 65px
-    height: 65px
-    text-align: center
-    font-size: 32px
-    line-height: 1.29
     text-transform: uppercase
-    background-clip: padding-box
-
-    &:focus
-        -webkit-appearance: none
-        border: 2px solid skyblue
-        outline: 0
-        box-shadow: 0px 0px 3px rgba(131, 192, 253, 0.5)
 </style>

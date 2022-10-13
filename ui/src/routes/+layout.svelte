@@ -1,6 +1,7 @@
 <script lang="ts">
-	import Loader from '$lib/Loader.svelte';
+	import '../app.css';
+	import NavBar from '$lib/NavBar.svelte';
 </script>
 
-<Loader />
+<NavBar />
 <slot />

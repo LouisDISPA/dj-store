@@ -1,27 +1,28 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Button from '$lib/Button.svelte';
-	import { loading } from '$lib/Loader.svelte';
 	import PassCode from '$lib/PassCode.svelte';
 	let input = '';
-
+	let loading = false;
 	function goToPage() {
 		if (input.length !== 6) {
 			input = '';
 			return;
 		}
-		loading.set(true);
-		goto('/' + input).then(() => {
-			loading.set(false);
+		loading = true;
+		goto('/r/' + input).then(() => {
+			loading = false;
 		});
 	}
 </script>
 
 <div id="page">
-	<h1>Enter a code</h1>
-	<PassCode bind:input />
-	<Button label="Connect" onSubmit={goToPage} />
-	<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
+	<h1 class="text-2xl font-bold p-2">Enter a code</h1>
+	<PassCode bind:input onSubmit={goToPage} />
+	<div>
+		<Button label="Connect" onSubmit={goToPage} {loading} />
+		<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
+	</div>
 </div>
 
 <style lang="sass">
@@ -30,5 +31,5 @@ div#page
 	flex-direction: column
 	align-items: center
 	justify-content: center
-	height: 50vh
+	height: 35rem
 </style>
