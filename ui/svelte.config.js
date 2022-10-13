@@ -12,7 +12,10 @@ const config = {
 	kit: {
 		adapter: adapter({
 			fallback: 'index.html'
-		})
+		}),
+		paths: {
+			base: process.env.BASE_HREF || ''
+		}
 	}
 };
 

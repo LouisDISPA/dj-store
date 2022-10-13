@@ -1,12 +1,13 @@
 <script>
 	import Dropdown from './Dropdown.svelte';
 	import Menu from './Menu.svelte';
+	import favicon from '../../static/favicon.png';
 </script>
 
 <div class="navbar shadow-lg justify-between">
 	<div class="btn btn-ghost px-1 no-animation">
 		<a href="/" class="normal-case text-xl"
-			><img src="/favicon.png" class="inline-block w-10 h-10 mr-3" alt="logo" />DJ Store</a
+			><img src={favicon} class="inline-block w-10 h-10 mr-3" alt="logo" />DJ Store</a
 		>
 	</div>
 	<div class="md:hidden">
