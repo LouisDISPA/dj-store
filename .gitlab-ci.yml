@@ -2,7 +2,6 @@ stages:
   - lint
   - build
   - test
-  - deploy
 
 
 lint_ui:
@@ -21,27 +20,11 @@ lint_ui:
     - yarn check
     - yarn lint
 
-build_ui:
+pages:
   stage: build
   image: node:18
-  # cache:
-  #   - key:
-  #       files:
-  #         - ui/yarn.lock
-  #     paths:
-  #       - ui/node_modules/
   needs: 
     - lint_ui 
-  script:
-    - cd ui/
-    - yarn
-    - yarn build
-
-pages:
-  stage: deploy
-  image: node:18
-  needs: 
-    - build_ui
   script:
     - cd ui/
     - yarn
@@ -51,26 +34,26 @@ pages:
     paths:
       - public
 
-lint_server:
-  stage: lint
-  image: rust:latest
-  script:
-    - rustup component add clippy rustfmt
-    - cargo clippy -- -D warnings
-    - cargo fmt -- --check
+# lint_server:
+#   stage: lint
+#   image: rust:latest
+#   script:
+#     - rustup component add clippy rustfmt
+#     - cargo clippy -- -D warnings
+#     - cargo fmt -- --check
 
-build_server:
-  stage: build
-  image: rust:latest
-  needs: 
-    - lint_server
-  script:
-    - cargo build
+# build_server:
+#   stage: build
+#   image: rust:latest
+#   needs: 
+#     - lint_server
+#   script:
+#     - cargo build
 
-test_server:
-  stage: test
-  image: rust:latest
-  needs: 
-    - build_server
-  script:
-    - cargo test
+# test_server:
+#   stage: test
+#   image: rust:latest
+#   needs: 
+#     - build_server
+#   script:
+#     - cargo test
