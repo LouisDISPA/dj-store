@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Button from './Button.svelte';
-	import { loading } from './Loader.svelte';
-	import PassCode from './PassCode.svelte';
+	import Button from '$lib/Button.svelte';
+	import { loading } from '$lib/Loader.svelte';
+	import PassCode from '$lib/PassCode.svelte';
 	let input = '';
 
 	function goToPage() {
