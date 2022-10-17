@@ -1,0 +1,26 @@
+<script lang="ts">
+	export let id: string;
+	export let title: string;
+	export let artist: string;
+	export let votes: number | undefined = undefined;
+</script>
+
+<tr {id}>
+	<td>
+		<div class="avatar">
+			<div class="mask mask-squircle w-12 h-12">
+				<img src="https://picsum.photos/200/300" alt="music poster" />
+			</div>
+		</div>
+	</td>
+	<td>
+		<div>
+			<div class="font-bold">{title}</div>
+			<div class="text-sm opacity-50">{artist}</div>
+		</div>
+	</td>
+	<td>
+		{votes}
+		<input type="radio" class="mask mask-heart bg-red-400" />
+	</td>
+</tr>

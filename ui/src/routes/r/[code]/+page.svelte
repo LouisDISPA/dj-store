@@ -1,12 +1,17 @@
 <script lang="ts">
-	export let data: { code: string };
+	import MusicTile from '$lib/MusicTile.svelte';
+	import Search from '$lib/Search.svelte';
+	import Table from '$lib/Table.svelte';
+	import type { Vote } from './+page';
+
+	export let data: { code: string; votes: Array<Vote> };
 </script>
 
-<div class="hero my-10">
-	<div class="hero-content text-center">
-		<div class="max-w-md">
-			<h1 class="text-5xl font-bold">{data.code}</h1>
-			<p class="py-6">This page is not done yet !</p>
-		</div>
-	</div>
+<div class="grid-cols-1">
+	<Search />
+	<Table>
+		{#each data.votes as vote}
+			<MusicTile {...vote.music} votes={vote.count} />
+		{/each}
+	</Table>
 </div>

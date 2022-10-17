@@ -4,10 +4,10 @@
 	import { env, goto } from '$lib/utils';
 </script>
 
-<div class="navbar shadow-lg justify-between bg-base-200">
-	<button class="btn btn-ghost px-1 no-animation normal-case text-xl" on:click={() => goto('/')}>
-		<img src="{env.BASE_HREF}/favicon.png" class="inline-block w-10 h-10 mr-3" alt="logo" />
-		<h1>DJ Store</h1>
+<div class="flex p-2 shadow-lg justify-between bg-neutral rounded-box m-3">
+	<button class="btn btn-ghost px-2 no-animation" on:click={() => goto('/')}>
+		<img src="{env.BASE_HREF}/favicon.png" class="inline-block w-10 h-10 mr-2" alt="logo" />
+		<h1 class="normal-case text-xl mx-1">DJ Store</h1>
 	</button>
 	<div class="md:hidden">
 		<Dropdown>
@@ -26,7 +26,7 @@
 			</span>
 		</Dropdown>
 	</div>
-	<div class="hidden md:block mr-3">
+	<div class="hidden md:block mr-2">
 		<Menu direction="horizontal" />
 	</div>
 </div>
