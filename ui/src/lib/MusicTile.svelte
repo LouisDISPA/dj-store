@@ -20,7 +20,8 @@
 		</div>
 	</td>
 	<td>
-		{votes}
-		<input type="radio" class="mask mask-heart bg-red-400" />
+		<div class="rating">
+			<input type="checkbox" class="mask mask-heart bg-red-500 opacity-10 checked:opacity-50" />
+		</div>
 	</td>
 </tr>
