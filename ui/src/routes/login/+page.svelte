@@ -3,8 +3,8 @@
 	import TextInput from '$lib/TextInput.svelte';
 </script>
 
-<div class="hero">
-	<div class="hero-content flex-col lg:flex-row-reverse">
+<div class="hero mt-5">
+	<div class="hero-content flex-col">
 		<div class="text-center lg:text-left my-3">
 			<h1 class="text-2xl font-bold">Login to your account</h1>
 		</div>

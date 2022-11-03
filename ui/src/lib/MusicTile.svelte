@@ -21,7 +21,7 @@
 	</td>
 	<td>
 		<div class="rating">
-			<input type="checkbox" class="mask mask-heart bg-red-500 opacity-10 checked:opacity-50" />
+			<input type="checkbox" class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80" />
 		</div>
 	</td>
 </tr>

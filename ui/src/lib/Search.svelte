@@ -1,5 +1,14 @@
-<div class="input-group justify-center my-4">
-	<input type="text" placeholder="Search…" class="input input-bordered" />
+<script lang="ts">
+	export let onSubmit: (search: string) => void;
+
+	let input: HTMLInputElement;
+</script>
+
+<form
+	class="input-group justify-center my-4"
+	on:submit|preventDefault={() => onSubmit(input.value)}
+>
+	<input bind:this={input} type="text" placeholder="Search…" class="input input-bordered" />
 	<button class="btn btn-square">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -15,4 +24,4 @@
 			/></svg
 		>
 	</button>
-</div>
+</form>

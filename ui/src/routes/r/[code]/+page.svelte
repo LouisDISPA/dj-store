@@ -5,10 +5,14 @@
 	import type { Vote } from './+page';
 
 	export let data: { code: string; votes: Array<Vote> };
+
+	async function onSearch(search: string) {
+		alert(search);
+	}
 </script>
 
 <div class="grid-cols-1">
-	<Search />
+	<Search onSubmit={onSearch} />
 	<Table>
 		{#each data.votes as vote}
 			<MusicTile {...vote.music} votes={vote.count} />

@@ -4,7 +4,7 @@
 	import { env, goto } from '$lib/utils';
 </script>
 
-<div class="flex p-2 shadow-lg justify-between bg-neutral rounded-box m-3">
+<div class="flex p-2 shadow-lg justify-between bg-base-100">
 	<button class="btn btn-ghost px-2 no-animation" on:click={() => goto('/')}>
 		<img src="{env.BASE_HREF}/favicon.png" class="inline-block w-10 h-10 mr-2" alt="logo" />
 		<h1 class="normal-case text-xl mx-1">DJ Store</h1>
