@@ -1,6 +1,12 @@
-use std::{path::Path, process::Command};
-
 fn main() {
+    #[cfg(feature = "embed-ui")]
+    build_ui();
+}
+
+#[cfg(feature = "embed-ui")]
+fn build_ui() {
+    use std::{path::Path, process::Command};
+
     // Detect if the ui is built, if not we build it
     // Don't check for changes on the ui code
     if !Path::new("./ui/build/index.html").exists() {
@@ -18,6 +24,9 @@ fn main() {
                 println!("cargo:warning=UI built successfully");
             }
         }
+    } else {
+        println!("cargo:warning=UI already built");
+        println!("cargo:warning=-> The UI might not be up to date. Run `yarn build` in the ui folder to update it");
     }
 
     // If the build directory doesn't exist, we create it empty
