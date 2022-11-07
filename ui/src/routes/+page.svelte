@@ -21,7 +21,7 @@
 	<PassCode bind:input onSubmit={goToPage} />
 	<div>
 		<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
-		<Button label="Connect" onSubmit={goToPage} {loading} />
+		<Button label="Connect" type="primary" onSubmit={goToPage} {loading} />
 	</div>
 </div>
 

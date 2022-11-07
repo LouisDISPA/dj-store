@@ -1,6 +1,7 @@
 <script>
 	import Button from '$lib/Button.svelte';
 	import TextInput from '$lib/TextInput.svelte';
+	import { goto } from '$lib/utils';
 </script>
 
 <div class="hero mt-5">
@@ -11,7 +12,7 @@
 		<TextInput label="Username" />
 		<TextInput label="Password" />
 		<div class="mt-5">
-			<Button label="Connect" />
+			<Button label="Connect" type="primary" onSubmit={() => goto('/admin')} />
 		</div>
 	</div>
 </div>
