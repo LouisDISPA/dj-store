@@ -7,11 +7,17 @@ build = "src/build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.5"
+axum = "0.6.0-rc.5"
+chrono = "0.4"
+dotenv = "0.15"
+log = "0.4"
 mime_guess = { version = "2", optional = true}
 rust-embed = { version = "6", features = ["axum"], optional = true}
-serde = { version = "1.0.145", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.3", features = ["cors", "trace"] }
+tracing-subscriber = "0.3"
 
 [features]
+default = ["embed-ui"]
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]

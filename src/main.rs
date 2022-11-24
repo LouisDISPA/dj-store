@@ -1,82 +1,46 @@
-use axum::{
-    extract::Path,
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    routing::{get, Router},
-    Json,
-};
-use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::env;
 
+use axum::http::Method;
+use log::info;
+use tower_http::cors::CorsLayer;
+
+mod api;
+mod model;
 #[cfg(feature = "embed-ui")]
 mod ui;
+mod utils;
 
 #[tokio::main]
 async fn main() {
-    // Define our app routes, including a fallback option for anything not matched.
+    dotenv::dotenv().ok();
+    tracing_subscriber::fmt::init();
+    model::init();
 
-    let api_router = Router::new().route("/:room/votes", get(get_votes));
-    let app = Router::new().nest("/api", api_router);
+    let mut app = api::router();
+
+    if let Ok(var) = env::var("CORS_ALLOWED_ORIGINS") {
+        let origins = utils::parse_allow_origin(&var);
+        let methods = vec![Method::GET, Method::POST];
+        info!("CORS allowed origins: {:?}", origins);
+        info!("CORS allowed methods: {:?}", methods);
+
+        app = app.layer(
+            CorsLayer::new()
+                .allow_methods(methods)
+                .allow_origin(origins),
+        );
+    } else {
+        info!("CORS disabled");
+    }
 
     #[cfg(feature = "embed-ui")]
     let app = ui::mount(app);
 
     // Start listening on the given address.
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("listening on http://{}", addr);
+    let addr = "127.0.0.1:3000".parse().unwrap();
+    info!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-#[derive(Serialize, Deserialize)]
-struct Votes {
-    music: Music,
-    count: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Music {
-    id: String,
-    name: String,
-    artist: String,
-}
-
-enum GetVotesError {
-    NotFound,
-}
-
-impl IntoResponse for GetVotesError {
-    fn into_response(self) -> Response {
-        match self {
-            GetVotesError::NotFound => (StatusCode::NOT_FOUND, "Not Found"),
-        }
-        .into_response()
-    }
-}
-
-async fn get_votes(Path(room): Path<String>) -> Result<Json<Vec<Votes>>, GetVotesError> {
-    if room == "error" {
-        return Err(GetVotesError::NotFound);
-    }
-
-    Ok(Json(vec![
-        Votes {
-            music: Music {
-                id: "1".to_string(),
-                name: "music1".to_string(),
-                artist: "artist1".to_string(),
-            },
-            count: 1,
-        },
-        Votes {
-            music: Music {
-                id: "2".to_string(),
-                name: "music2".to_string(),
-                artist: "artist2".to_string(),
-            },
-            count: 2,
-        },
-    ]))
 }

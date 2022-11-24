@@ -1,11 +1,11 @@
 <script lang="ts">
-	export let id: string;
+	export let id: number;
 	export let title: string;
 	export let artist: string;
 	export let votes: number | undefined = undefined;
 </script>
 
-<tr {id}>
+<tr id={id.toString()}>
 	<td>
 		<div class="avatar">
 			<div class="mask mask-squircle w-12 h-12">

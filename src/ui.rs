@@ -9,7 +9,7 @@ use rust_embed::RustEmbed;
 pub fn mount(app: Router) -> Router {
     app.route("/_app/*file", get(static_handler))
         .route("/favicon.png", get(favicon_handler))
-        .fallback(get(index_handler))
+        .fallback(index_handler)
 }
 
 // We use static route matchers ("/" and "/index.html") to serve our home

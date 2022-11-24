@@ -1,53 +1,36 @@
+import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
 export type Music = {
-	id: string;
+	id: number;
 	title: string;
 	artist: string;
+	votes: number;
 };
 
-export type Vote = {
-	music: Music;
-	count: number;
+export type PageData = {
+	musics: Music[];
 };
 
-export const load: PageLoad = async ({ params }) => {
-	await new Promise((resolve) => setTimeout(resolve, 500));
+export const load: PageLoad<PageData> = async ({ params }) => {
+	const { code } = params;
 
-	const votes: Array<Vote> = [
-		{
-			music: {
-				id: '1',
-				title: 'Never Gonna Give You Up',
-				artist: 'Rick Astley'
-			},
-			count: 1
-		},
-		{
-			music: {
-				id: '2',
-				title: 'Sandstorm',
-				artist: 'Darude'
-			},
-			count: 2
-		},
-		{
-			music: {
-				id: '3',
-				title: 'Africa',
-				artist: 'Toto'
-			},
-			count: 3
-		},
-		{
-			music: {
-				id: '4',
-				title: 'Shake It Off',
-				artist: 'Taylor Swift'
-			},
-			count: 4
-		}
-	];
+	if (code.length !== 6 || code.toUpperCase() !== code) {
+		const message = `Invalid code: ${code}`;
+		const detail = 'The code must be 6 uppercase letters.';
 
-	return { code: params.code, votes };
+		throw error(500, { message, detail });
+	}
+
+	const res = await fetch(`http://localhost:3000/api/${code}/musics`);
+
+	if (res.status >= 300) {
+		const message = 'Empty Room';
+		const detail = 'Could not fetch the musics.';
+
+		throw error(res.status, { message, detail });
+	}
+
+	const musics: Music[] = await res.json();
+	return { musics };
 };
