@@ -1,5 +1,7 @@
 use chrono::prelude::*;
-use std::{str::FromStr, sync::RwLock};
+use std::sync::RwLock;
+
+use crate::api::room_id::RoomID;
 
 pub struct Music {
     pub id: usize,
@@ -11,11 +13,6 @@ pub struct Vote {
     pub music_id: usize,
     pub user_id: usize,
     pub datetime: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct RoomID {
-    pub id: u32,
 }
 
 pub struct Room {
@@ -93,40 +90,4 @@ pub fn init() {
         users,
         musics,
     });
-}
-
-impl FromStr for RoomID {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != 6 {
-            return Err(());
-        }
-
-        let mut id = 0;
-        for (i, c) in s.chars().enumerate() {
-            // check if the character is between A and Z
-            if ('A'..='Z').contains(&c) {
-                // convert the character to a number
-                let num = c as u32 - 'A' as u32;
-                // add the number to the id
-                id += num * 26u32.pow(i as u32);
-            } else {
-                return Err(());
-            }
-        }
-        Ok(RoomID { id })
-    }
-}
-
-impl ToString for RoomID {
-    fn to_string(&self) -> String {
-        let mut id = self.id;
-        let mut s = String::new();
-        while id > 0 {
-            s.push((('A' as u32) + (id % 26)) as u8 as char);
-            id /= 26;
-        }
-        s
-    }
 }

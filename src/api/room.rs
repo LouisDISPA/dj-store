@@ -4,54 +4,62 @@ use axum::{
     extract::Path,
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::get,
-    Json, Router,
+    Json,
 };
+use displaydoc::Display;
 use serde::{Deserialize, Serialize};
-use tower_http::trace::TraceLayer;
+use thiserror::Error;
 
-use crate::model::{RoomID, ROOMS};
+use crate::model::ROOMS;
 
-pub fn router() -> Router {
-    Router::new()
-        .layer(TraceLayer::new_for_http())
-        .route("/api/:room/musics", get(get_musics))
+use super::room_id::{RoomID, RoomParseError};
+
+pub async fn join(Path(room_id): Path<RoomID>) -> impl IntoResponse {
+    todo!()
 }
 
 #[derive(Serialize, Deserialize)]
-struct Music {
+pub struct Music {
     id: usize,
     title: String,
     artist: String,
     votes: usize,
 }
 
-#[derive(Serialize, Deserialize)]
-enum GetMusicError {
-    NotFound,
+#[derive(Error, Display, Debug)]
+pub enum GetMusicError {
+    /// {0}
+    ParsingError(#[from] RoomParseError),
+    /// Room not found.
+    RoomNotFound(RoomID),
+    /// Internal error.
     InternalError,
 }
 
 impl IntoResponse for GetMusicError {
     fn into_response(self) -> Response {
-        match self {
-            GetMusicError::NotFound => (StatusCode::NOT_FOUND, "Not Found"),
-            GetMusicError::InternalError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Error"),
-        }
-        .into_response()
+        use GetMusicError::*;
+
+        let status: StatusCode = match self {
+            ParsingError(_) => StatusCode::BAD_REQUEST,
+            RoomNotFound(_) => StatusCode::NOT_FOUND,
+            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        (status, self.to_string()).into_response()
     }
 }
 
-async fn get_musics(Path(room): Path<String>) -> Result<Json<Vec<Music>>, GetMusicError> {
+pub async fn get_musics(Path(room): Path<String>) -> Result<Json<Vec<Music>>, GetMusicError> {
     let rooms = ROOMS.read().map_err(|_| GetMusicError::InternalError)?;
-    let room_id: RoomID = room.parse().map_err(|_| GetMusicError::InternalError)?;
+    let room_id: RoomID = room.parse()?;
 
     let room = rooms
         .iter()
         .find(|r| r.id == room_id)
-        .ok_or(GetMusicError::NotFound)?;
-    let mut music_vote = HashMap::new();
+        .ok_or(GetMusicError::RoomNotFound(room_id))?;
 
+    let mut music_vote = HashMap::new();
     for vote in room.votes.iter() {
         let count = music_vote.entry(vote.music_id).or_insert(0);
         *count += 1;
