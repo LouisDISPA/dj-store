@@ -1,8 +1,4 @@
-use std::env;
-
-use axum::http::Method;
 use log::info;
-use tower_http::cors::CorsLayer;
 
 mod api;
 mod model;
@@ -16,22 +12,10 @@ async fn main() {
     tracing_subscriber::fmt::init();
     model::init();
 
-    let mut app = api::router();
+    let app = api::router();
 
-    if let Ok(var) = env::var("CORS_ALLOWED_ORIGINS") {
-        let origins = utils::parse_allow_origin(&var);
-        let methods = vec![Method::GET, Method::POST];
-        info!("CORS allowed origins: {:?}", origins);
-        info!("CORS allowed methods: {:?}", methods);
-
-        app = app.layer(
-            CorsLayer::new()
-                .allow_methods(methods)
-                .allow_origin(origins),
-        );
-    } else {
-        info!("CORS disabled");
-    }
+    #[cfg(not(feature = "embed-ui"))]
+    let app = utils::cors::init(app);
 
     #[cfg(feature = "embed-ui")]
     let app = ui::mount(app);

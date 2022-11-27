@@ -1,11 +1,12 @@
 use chrono::prelude::*;
-use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
+use uuid::Uuid;
 
-use crate::api::room_id::RoomID;
+use crate::{api::room_id::RoomID, utils::jwt};
 
 pub struct Music {
-    pub id: usize,
+    pub origin_id: String,
     pub title: String,
     pub artist: String,
 }
@@ -22,10 +23,18 @@ pub struct Room {
     pub musics: Vec<Music>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "role")]
+pub enum Role {
+    Admin {},
+    User { room_id: RoomID },
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct User {
-    pub token: Uuid,
-    pub room_id: RoomID,
+    pub uid: Uuid,
+    #[serde(flatten)]
+    pub role: Role,
 }
 
 pub static ROOMS: RwLock<Vec<Room>> = RwLock::new(Vec::new());
@@ -33,55 +42,64 @@ pub static USERS: RwLock<Vec<User>> = RwLock::new(Vec::new());
 
 pub fn init() {
     let mut rooms = ROOMS.write().unwrap();
+    let mut users = USERS.write().unwrap();
 
     let musics = vec![
         Music {
-            id: 1,
+            origin_id: "1".to_string(),
             title: "Never Gonna Give You Up".to_string(),
             artist: "Rick Astley".to_string(),
         },
         Music {
-            id: 2,
+            origin_id: "2".to_string(),
             title: "Sandstorm".to_string(),
             artist: "Darude".to_string(),
         },
         Music {
-            id: 3,
+            origin_id: "3".to_string(),
             title: "Africa".to_string(),
             artist: "Toto".to_string(),
         },
     ];
 
     let room_id = "AAAAAA".parse().unwrap();
-    let users = vec![
+
+    let admin = User {
+        uid: Uuid::new_v4(),
+        role: Role::Admin {},
+    };
+    println!("Admin token: {}", jwt::sign(admin));
+
+    *users = vec![
         User {
-            token: Uuid::new_v4(),
-            room_id,
+            uid: Uuid::new_v4(),
+            role: Role::User { room_id },
         },
         User {
-            token: Uuid::new_v4(),
-            room_id,
+            uid: Uuid::new_v4(),
+            role: Role::User { room_id },
         },
+        admin,
     ];
     let votes = vec![
         Vote {
             music_id: 1,
-            user_id: users[0].token,
+            user_id: users[0].uid,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 2,
-            user_id: users[1].token,
+            user_id: users[1].uid,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 1,
-            user_id: users[1].token,
+            user_id: users[1].uid,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 1,
-            user_id: users[0].token,
+            user_id: users[0].uid,
             datetime: Utc::now(),
         },
     ];

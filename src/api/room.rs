@@ -2,9 +2,10 @@ use std::{collections::HashMap, time::Duration};
 
 use axum::{
     extract::{FromRequestParts, Path},
+    headers::{authorization::Bearer, Authorization},
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
-    Json,
+    Json, RequestPartsExt, TypedHeader,
 };
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
@@ -12,13 +13,16 @@ use thiserror::Error;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use crate::model::{User, Vote, ROOMS, USERS};
+use crate::{
+    model::{Role, User, Vote, ROOMS, USERS},
+    utils::jwt,
+};
 
 use super::room_id::{RoomID, RoomParseError};
 
 #[derive(Serialize, Deserialize)]
 pub struct JoinToken {
-    access_token: Uuid,
+    access_token: String,
     token_type: &'static str,
 }
 
@@ -52,8 +56,13 @@ pub async fn join(Path(room_id): Path<RoomID>) -> Result<Json<JoinToken>, JoinEr
         .ok_or(JoinError::RoomNotFound)?;
 
     let mut users = USERS.write().unwrap();
-    let token = Uuid::new_v4();
-    users.push(User { token, room_id });
+    let uid = Uuid::new_v4();
+    let user = User {
+        uid,
+        role: Role::User { room_id },
+    };
+    users.push(user);
+    let token = jwt::sign(user);
     Ok(Json(JoinToken {
         access_token: token,
         token_type: "Bearer",
@@ -62,24 +71,19 @@ pub async fn join(Path(room_id): Path<RoomID>) -> Result<Json<JoinToken>, JoinEr
 
 #[axum::async_trait]
 impl<S: Send + Sync> FromRequestParts<S> for User {
-    type Rejection = (StatusCode, &'static str);
+    type Rejection = StatusCode;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        const MISSING: (StatusCode, &str) =
-            (StatusCode::UNAUTHORIZED, "Missing Authorization header");
-        const INVALID: (StatusCode, &str) =
-            (StatusCode::UNAUTHORIZED, "Invalid Authorization header");
-        const NOT_FOUND: (StatusCode, &str) = (StatusCode::UNAUTHORIZED, "User not found");
+        const ERROR: StatusCode = StatusCode::UNAUTHORIZED;
 
-        let token = parts.headers.remove("Authorization").ok_or(MISSING)?;
-        let token = token.to_str().map_err(|_| INVALID)?;
-        let token = token.strip_prefix("Bearer ").ok_or(INVALID)?;
-        let token = token.parse().map_err(|_| INVALID)?;
-
-        let users = USERS.read().unwrap();
-        let user = users.iter().find(|u| u.token == token).ok_or(NOT_FOUND)?;
-
-        return Ok(*user);
+        let auth: TypedHeader<Authorization<Bearer>> = parts.extract().await.map_err(|_| ERROR)?;
+        match jwt::verify(auth.0.token().trim()) {
+            Ok(user) => Ok(user),
+            Err(err) => {
+                log::warn!("{}", err);
+                Err(ERROR)
+            }
+        }
     }
 }
 
@@ -110,6 +114,7 @@ impl IntoResponse for VoteError {
 #[derive(Serialize, Deserialize)]
 pub struct VoteBody {
     music_id: usize,
+    voted: bool,
 }
 
 pub async fn vote(
@@ -117,7 +122,7 @@ pub async fn vote(
     user: User,
     Json(vote): Json<VoteBody>,
 ) -> Result<Json<()>, VoteError> {
-    if room_id != user.room_id {
+    if (Role::User { room_id }) != user.role {
         return Err(VoteError::UserNotInRoom);
     }
     let mut rooms = ROOMS.write().unwrap();
@@ -126,16 +131,20 @@ pub async fn vote(
         .find(|r| r.id == room_id)
         .ok_or(VoteError::RoomNotFound)?;
 
-    let music = room
-        .musics
-        .iter_mut()
-        .find(|m| m.id == vote.music_id)
+    room.musics
+        .get(vote.music_id)
         .ok_or(VoteError::MusicNotFound)?;
-    room.votes.push(Vote {
-        user_id: user.token,
-        music_id: music.id,
-        datetime: chrono::Utc::now(),
-    });
+
+    if vote.voted {
+        room.votes.push(Vote {
+            user_id: user.uid,
+            music_id: vote.music_id,
+            datetime: chrono::Utc::now(),
+        });
+    } else {
+        room.votes
+            .retain(|v| v.user_id != user.uid && v.music_id == vote.music_id);
+    }
 
     Ok(Json(()))
 }
@@ -150,10 +159,10 @@ pub struct Music {
 
 #[derive(Error, Display, Debug)]
 pub enum GetMusicError {
-    /// The room ID Error: {0}
-    ParsingError(#[from] RoomParseError),
     /// Room not found.
     RoomNotFound(RoomID),
+    /// User not in room.
+    UserNotInRoom,
     /// Internal error.
     InternalError,
 }
@@ -163,8 +172,8 @@ impl IntoResponse for GetMusicError {
         use GetMusicError::*;
 
         let status: StatusCode = match self {
-            ParsingError(_) => StatusCode::BAD_REQUEST,
             RoomNotFound(_) => StatusCode::NOT_FOUND,
+            UserNotInRoom => StatusCode::UNAUTHORIZED,
             InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
@@ -172,9 +181,15 @@ impl IntoResponse for GetMusicError {
     }
 }
 
-pub async fn get_musics(Path(room): Path<String>) -> Result<Json<Vec<Music>>, GetMusicError> {
+pub async fn get_musics(
+    Path(room_id): Path<RoomID>,
+    user: User,
+) -> Result<Json<Vec<Music>>, GetMusicError> {
+    if (Role::User { room_id }) != user.role {
+        return Err(GetMusicError::UserNotInRoom);
+    }
+
     let rooms = ROOMS.read().map_err(|_| GetMusicError::InternalError)?;
-    let room_id: RoomID = room.parse()?;
 
     let room = rooms
         .iter()
@@ -183,22 +198,22 @@ pub async fn get_musics(Path(room): Path<String>) -> Result<Json<Vec<Music>>, Ge
 
     let mut music_vote = HashMap::new();
     for vote in room.votes.iter() {
-        let count = music_vote.entry(vote.music_id).or_insert(0);
+        let count = music_vote.entry(vote.music_id.to_owned()).or_insert(0);
         *count += 1;
     }
 
     let musics = music_vote
         .into_iter()
         .map(|(id, votes)| {
-            let music = room.musics.iter().find(|m| m.id == id).unwrap();
-            Music {
-                id: music.id,
+            let music = room.musics.get(id).ok_or(GetMusicError::InternalError)?;
+            Ok(Music {
+                id,
                 title: music.title.clone(),
                 artist: music.artist.clone(),
                 votes,
-            }
+            })
         })
-        .collect();
+        .collect::<Result<Vec<Music>, GetMusicError>>()?;
 
     Ok(Json(musics))
 }
