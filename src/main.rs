@@ -1,3 +1,4 @@
+use axum::Router;
 use log::info;
 
 mod api;
@@ -12,7 +13,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
     model::init();
 
-    let app = api::router();
+    let app = Router::new().nest("/api", api::router());
 
     #[cfg(not(feature = "embed-ui"))]
     let app = utils::cors::init(app);

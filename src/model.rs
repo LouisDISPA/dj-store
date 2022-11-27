@@ -1,12 +1,11 @@
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::sync::RwLock;
+use std::{collections::HashMap, sync::RwLock};
 use uuid::Uuid;
 
 use crate::{api::room_id::RoomID, utils::jwt};
 
 pub struct Music {
-    pub origin_id: String,
     pub title: String,
     pub artist: String,
 }
@@ -21,6 +20,7 @@ pub struct Room {
     pub id: RoomID,
     pub votes: Vec<Vote>,
     pub musics: Vec<Music>,
+    pub musics_to_id: HashMap<String, usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,21 +46,24 @@ pub fn init() {
 
     let musics = vec![
         Music {
-            origin_id: "1".to_string(),
             title: "Never Gonna Give You Up".to_string(),
             artist: "Rick Astley".to_string(),
         },
         Music {
-            origin_id: "2".to_string(),
             title: "Sandstorm".to_string(),
             artist: "Darude".to_string(),
         },
         Music {
-            origin_id: "3".to_string(),
             title: "Africa".to_string(),
             artist: "Toto".to_string(),
         },
     ];
+
+    let musics_to_id = musics
+        .iter()
+        .enumerate()
+        .map(|(i, m)| (format!("{} - {}", m.artist, m.title), i))
+        .collect();
 
     let room_id = "AAAAAA".parse().unwrap();
 
@@ -108,5 +111,6 @@ pub fn init() {
         id: room_id,
         votes,
         musics,
+        musics_to_id,
     });
 }
