@@ -26,7 +26,7 @@ pub struct Room {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "role")]
 pub enum Role {
-    Admin {},
+    Admin,
     User { room_id: RoomID },
 }
 
@@ -66,20 +66,20 @@ pub fn init() {
 
     let admin = User {
         uid: Uuid::new_v4(),
-        role: Role::Admin {},
+        role: Role::Admin,
     };
     println!("Admin token: {}", jwt::sign(admin));
 
     *users = vec![
-        User {
-            uid: Uuid::new_v4(),
-            role: Role::User { room_id },
-        },
-        User {
-            uid: Uuid::new_v4(),
-            role: Role::User { room_id },
-        },
         admin,
+        User {
+            uid: Uuid::new_v4(),
+            role: Role::User { room_id },
+        },
+        User {
+            uid: Uuid::new_v4(),
+            role: Role::User { room_id },
+        },
     ];
     let votes = vec![
         Vote {

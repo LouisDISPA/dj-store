@@ -1,11 +1,10 @@
 use std::{collections::HashMap, time::Duration};
 
 use axum::{
-    extract::{FromRequestParts, Path},
-    headers::{authorization::Bearer, Authorization},
-    http::{request::Parts, StatusCode},
+    extract::Path,
+    http::StatusCode,
     response::{IntoResponse, Response},
-    Json, RequestPartsExt, TypedHeader,
+    Json,
 };
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
@@ -15,21 +14,13 @@ use uuid::Uuid;
 
 use crate::{
     model::{Role, User, Vote, ROOMS, USERS},
-    utils::jwt,
+    utils::jwt::UserToken,
 };
 
-use super::room_id::{RoomID, RoomParseError};
-
-#[derive(Serialize, Deserialize)]
-pub struct JoinToken {
-    access_token: String,
-    token_type: &'static str,
-}
+use super::room_id::RoomID;
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JoinError {
-    /// The room ID is invalid: {0}
-    InvalidRoomID(#[from] RoomParseError),
     /// The room does not exist.
     RoomNotFound,
 }
@@ -37,7 +28,6 @@ pub enum JoinError {
 impl IntoResponse for JoinError {
     fn into_response(self) -> Response {
         let status = match self {
-            JoinError::InvalidRoomID(_) => StatusCode::BAD_REQUEST,
             JoinError::RoomNotFound => StatusCode::NOT_FOUND,
         };
 
@@ -47,7 +37,7 @@ impl IntoResponse for JoinError {
     }
 }
 
-pub async fn join(Path(room_id): Path<RoomID>) -> Result<Json<JoinToken>, JoinError> {
+pub async fn join(Path(room_id): Path<RoomID>) -> Result<Json<UserToken>, JoinError> {
     sleep(Duration::from_secs(1)).await;
     let rooms = ROOMS.read().unwrap();
     rooms
@@ -62,29 +52,7 @@ pub async fn join(Path(room_id): Path<RoomID>) -> Result<Json<JoinToken>, JoinEr
         role: Role::User { room_id },
     };
     users.push(user);
-    let token = jwt::sign(user);
-    Ok(Json(JoinToken {
-        access_token: token,
-        token_type: "Bearer",
-    }))
-}
-
-#[axum::async_trait]
-impl<S: Send + Sync> FromRequestParts<S> for User {
-    type Rejection = StatusCode;
-
-    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        const ERROR: StatusCode = StatusCode::UNAUTHORIZED;
-
-        let auth: TypedHeader<Authorization<Bearer>> = parts.extract().await.map_err(|_| ERROR)?;
-        match jwt::verify(auth.0.token().trim()) {
-            Ok(user) => Ok(user),
-            Err(err) => {
-                log::warn!("{}", err);
-                Err(ERROR)
-            }
-        }
-    }
+    Ok(Json(UserToken::new(user)))
 }
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]

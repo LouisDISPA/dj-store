@@ -1,3 +1,9 @@
+use axum::{
+    extract::FromRequestParts,
+    headers::{authorization::Bearer, Authorization},
+    http::{request::Parts, StatusCode},
+    RequestPartsExt, TypedHeader,
+};
 use chrono::{Duration, Utc};
 use displaydoc::Display;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
@@ -8,6 +14,40 @@ use crate::model::User;
 
 // TODO: Better secret
 static JWT_SECRET: &str = "secret";
+
+#[derive(Serialize, Deserialize)]
+pub struct UserToken {
+    access_token: String,
+    token_type: &'static str,
+}
+
+impl UserToken {
+    pub fn new(user: User) -> Self {
+        let token = sign(user);
+        Self {
+            access_token: token,
+            token_type: "Bearer",
+        }
+    }
+}
+
+#[axum::async_trait]
+impl<S: Send + Sync> FromRequestParts<S> for User {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+        const ERROR: StatusCode = StatusCode::UNAUTHORIZED;
+
+        let auth: TypedHeader<Authorization<Bearer>> = parts.extract().await.map_err(|_| ERROR)?;
+        match verify(auth.token().trim()) {
+            Ok(user) => Ok(user),
+            Err(err) => {
+                log::warn!("{}", err);
+                Err(ERROR)
+            }
+        }
+    }
+}
 
 #[derive(Debug, Error, Display)]
 pub enum JwtVerifyError {
