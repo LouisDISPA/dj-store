@@ -18,5 +18,5 @@ pub fn router() -> Router {
         .route("/room/:room/join", get(room::join))
         .route("/room/:room/musics", get(room::get_musics))
         .route("/room/:room/search", get(search::search))
-    // .route("/room/:room/vote", post(room::vote))
+        .route("/room/:room/vote", post(room::vote))
 }

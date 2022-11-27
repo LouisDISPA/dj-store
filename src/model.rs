@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use uuid::Uuid;
 use std::sync::RwLock;
 
 use crate::api::room_id::RoomID;
@@ -11,23 +12,24 @@ pub struct Music {
 
 pub struct Vote {
     pub music_id: usize,
-    pub user_id: usize,
+    pub user_id: Uuid,
     pub datetime: DateTime<Utc>,
 }
 
 pub struct Room {
     pub id: RoomID,
     pub votes: Vec<Vote>,
-    pub users: Vec<User>,
     pub musics: Vec<Music>,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct User {
-    pub id: usize,
-    pub token: String,
+    pub token: Uuid,
+    pub room_id: RoomID,
 }
 
 pub static ROOMS: RwLock<Vec<Room>> = RwLock::new(Vec::new());
+pub static USERS: RwLock<Vec<User>> = RwLock::new(Vec::new());
 
 pub fn init() {
     let mut rooms = ROOMS.write().unwrap();
@@ -53,33 +55,33 @@ pub fn init() {
     let room_id = "AAAAAA".parse().unwrap();
     let users = vec![
         User {
-            id: 1,
-            token: "token1".to_string(),
+            token: Uuid::new_v4(),
+            room_id,
         },
         User {
-            id: 2,
-            token: "token2".to_string(),
+            token: Uuid::new_v4(),
+            room_id,
         },
     ];
     let votes = vec![
         Vote {
             music_id: 1,
-            user_id: 1,
+            user_id: users[0].token,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 2,
-            user_id: 2,
+            user_id: users[1].token,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 1,
-            user_id: 2,
+            user_id: users[1].token,
             datetime: Utc::now(),
         },
         Vote {
             music_id: 1,
-            user_id: 3,
+            user_id: users[0].token,
             datetime: Utc::now(),
         },
     ];
@@ -87,7 +89,6 @@ pub fn init() {
     rooms.push(Room {
         id: room_id,
         votes,
-        users,
         musics,
     });
 }
