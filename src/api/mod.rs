@@ -27,7 +27,10 @@ pub fn router() -> Router {
         .layer(TraceLayer::new_for_http())
         .route("/admin/login", post(admin::login))
         // .route("/admin/rooms", get(admin::get_rooms))
-        // .route("/admin/rooms", post(admin::post_room))
+        .route(
+            "/admin/rooms",
+            get(admin::get_rooms).post(admin::create_room),
+        )
         .route("/room/:room/join", get(room::join))
         .route("/room/:room/musics", get(room::get_musics))
         .route("/room/:room/search", get(search::search))

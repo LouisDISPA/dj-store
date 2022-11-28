@@ -8,7 +8,7 @@ build = "src/build.rs"
 
 [dependencies]
 axum = { version = "0.6.0", features = ["headers"] }
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 displaydoc = "0.2"
 dotenv = "0.15"
 jsonwebtoken = { version = "8.1.1", default-features = false }

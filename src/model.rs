@@ -21,6 +21,9 @@ pub struct Room {
     pub votes: Vec<Vote>,
     pub musics: Vec<Music>,
     pub musics_to_id: HashMap<String, usize>,
+    pub creation: DateTime<Utc>,
+    pub expiration: DateTime<Utc>,
+    pub active: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -112,5 +115,8 @@ pub fn init() {
         votes,
         musics,
         musics_to_id,
+        creation: Utc::now(),
+        expiration: Utc::now() + chrono::Duration::days(1),
+        active: true,
     });
 }
