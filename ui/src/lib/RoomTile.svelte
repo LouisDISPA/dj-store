@@ -3,9 +3,10 @@
 	import { goto } from './utils';
 
 	export let id: string;
-	export let userCount: number;
-	export let expirationDate: Date;
-	export let creationDate: Date;
+	export let user_count: number;
+	export let expiration: Date;
+	export let creation: Date;
+	export let active: boolean;
 
 	export let onDelete: (() => void) | undefined = undefined;
 
@@ -23,13 +24,13 @@
 		<div class="font-bold">{id}</div>
 	</td>
 	<td>
-		<div class="text-sm opacity-50">{userCount}</div>
+		<div class="text-sm opacity-50">{user_count}</div>
 	</td>
 	<td>
-		<div class="text-sm opacity-50">{timeFormat.format(expirationDate)}</div>
+		<div class="text-sm opacity-50">{timeFormat.format(expiration)}</div>
 	</td>
 	<td>
-		<div class="text-sm opacity-50">{timeFormat.format(creationDate)}</div>
+		<div class="text-sm opacity-50">{timeFormat.format(creation)}</div>
 	</td>
 	<td>
 		<Button label="GoTo" type="primary" onSubmit={() => goto(`r/${id}`)} />

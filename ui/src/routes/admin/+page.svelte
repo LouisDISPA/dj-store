@@ -2,57 +2,73 @@
 	import Button from '$lib/Button.svelte';
 	import RoomTile from '$lib/RoomTile.svelte';
 	import Table from '$lib/Table.svelte';
+	import { env } from '$lib/utils';
+	import type { PageData } from './$types';
+	import { convertApiRoom } from './+page';
 
-	function randomDate() {
-		let start = new Date(2020, 0, 1);
-		let end = new Date();
-		return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-	}
+	export let data: PageData;
+	const authToken = data.authToken;
 
-	function randomID() {
-		return Math.random().toString(36).substring(2, 8);
-	}
-
-	let rooms = [
-		{
-			id: randomID(),
-			userCount: 2,
-			expirationDate: randomDate(),
-			creationDate: randomDate()
-		},
-		{
-			id: randomID(),
-			userCount: 349,
-			expirationDate: randomDate(),
-			creationDate: randomDate()
-		},
-		{
-			id: randomID(),
-			userCount: 0,
-			expirationDate: randomDate(),
-			creationDate: randomDate()
+	function randomID(): string {
+		let result = '';
+		const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		for (var i = 0; i < 6; i++) {
+			result += characters.charAt(Math.floor(Math.random() * characters.length));
 		}
-	];
-
-	function addRoom() {
-		rooms.push({
-			id: randomID(),
-			userCount: 0,
-			expirationDate: randomDate(),
-			creationDate: randomDate()
-		});
-		rooms = rooms;
+		return result;
 	}
+
+	let rooms = data.rooms;
 
 	const header = ['ID', 'Users', 'Expires', 'Created', 'Actions'];
+
+	async function deleteRoom(id: string) {
+		const res = await fetch(`${env.API_URL}/api/room/${id}`, {
+			method: 'DELETE',
+			headers: {
+				Authorization: `Bearer ${authToken}`
+			}
+		});
+		if (res.ok) {
+			rooms = rooms.filter((room) => room.id !== id);
+		} else {
+			alert(`Failed to delete room: ${await res.text()}`);
+		}
+	}
+
+	async function createRoom() {
+		const expiration = new Date();
+		expiration.setHours(expiration.getHours() + 24);
+
+		const body = JSON.stringify({
+			id: randomID(),
+			expiration: expiration.toISOString()
+		});
+
+		const res = await fetch(`${env.API_URL}/api/room`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${authToken}`,
+				'Content-Type': 'application/json'
+			},
+			body
+		});
+		if (res.ok) {
+			const apiRoom = await res.json();
+			const room = convertApiRoom(apiRoom);
+			rooms.push(room);
+			rooms = rooms;
+		} else {
+			alert(`Failed to create room: ${await res.text()}`);
+		}
+	}
 </script>
 
 <div class="grid-cols-1">
 	<Table {header}>
 		{#each rooms as room}
-			<RoomTile {...room} onDelete={() => (rooms = rooms.filter((r) => r.id != room.id))} />
+			<RoomTile {...room} onDelete={() => deleteRoom(room.id)} />
 		{/each}
 	</Table>
-	<Button label="Create Room" type="primary" onSubmit={addRoom} />
-	<input class="bg-base-100 p-4 rounded-box select-none" type="datetime-local" />
+	<Button label="Create Room" type="primary" onSubmit={createRoom} />
 </div>

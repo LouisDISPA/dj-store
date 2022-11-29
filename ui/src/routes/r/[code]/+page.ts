@@ -1,3 +1,4 @@
+import { env } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
@@ -10,6 +11,7 @@ export type Music = {
 
 export type PageData = {
 	musics: Music[];
+	authToken: string;
 };
 
 export const load: PageLoad<PageData> = async ({ params }) => {
@@ -21,16 +23,50 @@ export const load: PageLoad<PageData> = async ({ params }) => {
 
 		throw error(500, { message, detail });
 	}
+	const authToken = await joinRoom(code);
 
-	const res = await fetch(`http://localhost:3000/api/${code}/musics`);
+	const musics = await getMusics(code, authToken);
 
-	if (res.status >= 300) {
-		const message = 'Empty Room';
-		const detail = 'Could not fetch the musics.';
+	return { musics, authToken };
+};
 
+async function joinRoom(code: string): Promise<string> {
+	let authToken = localStorage.getItem('authToken');
+
+	if (authToken) {
+		const tokenData = JSON.parse(atob(authToken.split('.')[1]));
+		if (tokenData.role === 'Admin') {
+			return authToken;
+		}
+		const isInRoom = tokenData.rooms_id == code;
+		if (isInRoom) {
+			return authToken;
+		}
+	}
+
+	const res = await fetch(`${env.API_URL}/api/room/${code}/join`);
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
+		throw error(res.status, { message, detail });
+	}
+	authToken = (await res.json())['access_token'] as string;
+	localStorage.setItem('authToken', authToken);
+
+	return authToken;
+}
+
+async function getMusics(code: string, authToken: string): Promise<Music[]> {
+	const res = await fetch(`${env.API_URL}/api/room/${code}/musics`, {
+		headers: {
+			Authorization: `Bearer ${authToken}`
+		}
+	});
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
 		throw error(res.status, { message, detail });
 	}
 
-	const musics: Music[] = await res.json();
-	return { musics };
-};
+	return await res.json();
+}

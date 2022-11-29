@@ -1,6 +1,12 @@
 <script lang="ts">
+	export let value = '';
 	export let label: string | undefined = undefined;
-	export let placeholder: string | undefined = label ? label.toLowerCase() + '...' : undefined;
+	export let placeholder = '...';
+	export let onSubmit: ((value: string) => void) | undefined = undefined;
+
+	function onChange(event: Event) {
+		value = (event.target as HTMLInputElement).value;
+	}
 </script>
 
 <div class="form-control">
@@ -9,5 +15,11 @@
 			<span class="label-text">{label}</span>
 		</div>
 	{/if}
-	<input type="text" {placeholder} class="input input-bordered" />
+	<input
+		type="text"
+		{placeholder}
+		class="input input-bordered"
+		on:change={onChange}
+		on:submit|preventDefault={() => onSubmit?.(value)}
+	/>
 </div>

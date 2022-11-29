@@ -13,10 +13,12 @@ async fn main() {
     tracing_subscriber::fmt::init();
     model::init();
 
-    let app = Router::new().nest("/api", api::router());
+    let api = api::router();
 
-    #[cfg(not(feature = "embed-ui"))]
-    let app = utils::cors::init(app);
+    // #[cfg(not(feature = "embed-ui"))]
+    let api = utils::cors::init(api);
+
+    let app = Router::new().nest("/api", api);
 
     #[cfg(feature = "embed-ui")]
     let app = ui::mount(app);

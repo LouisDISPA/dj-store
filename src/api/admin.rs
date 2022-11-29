@@ -110,7 +110,6 @@ pub async fn get_rooms(user: User) -> Result<Json<Vec<GetRoom>>, GetRoomsError> 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateRoom {
     id: RoomID,
-    creation: DateTime<Utc>,
     expiration: DateTime<Utc>,
 }
 
@@ -138,7 +137,10 @@ impl IntoResponse for CreateRoomsError {
     }
 }
 
-pub async fn create_room(user: User, Json(room): Json<CreateRoom>) -> Result<(), CreateRoomsError> {
+pub async fn create_room(
+    user: User,
+    Json(room): Json<CreateRoom>,
+) -> Result<Json<GetRoom>, CreateRoomsError> {
     if user.role != Role::Admin {
         return Err(CreateRoomsError::Unauthorized);
     }
@@ -152,7 +154,7 @@ pub async fn create_room(user: User, Json(room): Json<CreateRoom>) -> Result<(),
 
     let room = model::Room {
         id: room.id,
-        creation: room.creation,
+        creation: Utc::now(),
         expiration: room.expiration,
         active: true,
         votes: Default::default(),
@@ -160,7 +162,15 @@ pub async fn create_room(user: User, Json(room): Json<CreateRoom>) -> Result<(),
         musics_to_id: Default::default(),
     };
 
+    let res = GetRoom {
+        id: room.id,
+        creation: room.creation,
+        expiration: room.expiration,
+        active: room.active,
+        user_count: 0,
+    };
+
     rooms.push(room);
 
-    Ok(())
+    Ok(res.into())
 }
