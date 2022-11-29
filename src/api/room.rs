@@ -111,7 +111,7 @@ pub async fn vote(
         });
     } else {
         room.votes
-            .retain(|v| v.user_id != user.uid && v.music_id == vote.music_id);
+            .retain(|v| v.user_id != user.uid || v.music_id != vote.music_id);
     }
 
     Ok(Json(()))
@@ -123,6 +123,7 @@ pub struct Music {
     title: String,
     artist: String,
     votes: usize,
+    is_voted: bool,
 }
 
 #[derive(Error, Display, Debug)]
@@ -166,19 +167,25 @@ pub async fn get_musics(
 
     let mut music_vote = HashMap::new();
     for vote in room.votes.iter() {
-        let count = music_vote.entry(vote.music_id.to_owned()).or_insert(0);
+        let (count, user_vote) = music_vote
+            .entry(vote.music_id.to_owned())
+            .or_insert((0, false));
         *count += 1;
+        if vote.user_id == user.uid {
+            *user_vote = true;
+        }
     }
 
     let musics = music_vote
         .into_iter()
-        .map(|(id, votes)| {
+        .map(|(id, (votes, is_voted))| {
             let music = room.musics.get(id).ok_or(GetMusicError::InternalError)?;
             Ok(Music {
                 id,
                 title: music.title.clone(),
                 artist: music.artist.clone(),
                 votes,
+                is_voted,
             })
         })
         .collect::<Result<Vec<Music>, GetMusicError>>()?;

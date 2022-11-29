@@ -1,16 +1,21 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Hero from '$lib/Hero.svelte';
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Search from '$lib/Search.svelte';
 	import Table from '$lib/Table.svelte';
-	import { env, goto } from '$lib/utils';
+	import { env } from '$lib/utils';
 	import type { PageData } from './$types';
+	import { getSearch } from './+page';
 
 	export let data: PageData;
-	const { musics, authToken, roomCode } = data;
+	const { authToken, roomCode } = data;
 
-	function onSearch(search: string) {
+	let musics = data.musics;
+
+	async function onSearch(search: string) {
 		goto(`/r/${roomCode}/search?query=${search}`);
+		musics = await getSearch(roomCode, authToken, search);
 	}
 
 	async function onVote(is_voted: boolean, id: number) {

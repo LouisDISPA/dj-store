@@ -28,11 +28,6 @@ pub struct SearchMusic {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SearchResult {
-    pub musics: Vec<SearchMusic>,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct Artist {
     pub id: String,
     pub name: String,
@@ -69,8 +64,8 @@ pub async fn search(
     Query(request): Query<SearchRequest>,
     user: User,
     State(state): State<AppState>,
-) -> Result<Json<SearchResult>, SearchError> {
-    if (Role::User { room_id }) != user.role || user.role == Role::Admin {
+) -> Result<Json<Vec<SearchMusic>>, SearchError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(SearchError::UserNotInRoom);
     }
     let result = match state.client.search(&request.query).await {
@@ -103,5 +98,5 @@ pub async fn search(
         });
     }
 
-    Ok(Json(SearchResult { musics }))
+    Ok(Json(musics))
 }

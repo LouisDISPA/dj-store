@@ -6,28 +6,31 @@ export type Music = {
 	id: number;
 	title: string;
 	artist: string;
+	is_voted: boolean;
 	votes: number;
 };
 
 export type PageData = {
 	musics: Music[];
 	authToken: string;
+	roomCode: string;
 };
 
 export const load: PageLoad<PageData> = async ({ params }) => {
-	const { code } = params;
+	const { code: roomCode } = params;
 
-	if (code.length !== 6 || code.toUpperCase() !== code) {
-		const message = `Invalid code: ${code}`;
+	if (roomCode.length !== 6 || roomCode.toUpperCase() !== roomCode) {
+		const message = `Invalid code: ${roomCode}`;
 		const detail = 'The code must be 6 uppercase letters.';
 
 		throw error(500, { message, detail });
 	}
-	const authToken = await joinRoom(code);
+	const authToken = await joinRoom(roomCode);
 
-	const musics = await getMusics(code, authToken);
+	const musics = await getMusics(roomCode, authToken);
+	console.log(musics);
 
-	return { musics, authToken };
+	return { musics, authToken, roomCode };
 };
 
 async function joinRoom(code: string): Promise<string> {
