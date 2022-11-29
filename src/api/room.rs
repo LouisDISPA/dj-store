@@ -90,7 +90,7 @@ pub async fn vote(
     user: User,
     Json(vote): Json<VoteBody>,
 ) -> Result<Json<()>, VoteError> {
-    if (Role::User { room_id }) != user.role {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(VoteError::UserNotInRoom);
     }
     let mut rooms = ROOMS.write().unwrap();
@@ -153,7 +153,7 @@ pub async fn get_musics(
     Path(room_id): Path<RoomID>,
     user: User,
 ) -> Result<Json<Vec<Music>>, GetMusicError> {
-    if (Role::User { room_id }) != user.role {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(GetMusicError::UserNotInRoom);
     }
 

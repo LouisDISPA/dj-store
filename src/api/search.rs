@@ -63,13 +63,14 @@ impl IntoResponse for SearchError {
     }
 }
 
+// TODO: prevent user from searching too much
 pub async fn search(
     Path(room_id): Path<RoomID>,
     Query(request): Query<SearchRequest>,
     user: User,
     State(state): State<AppState>,
 ) -> Result<Json<SearchResult>, SearchError> {
-    if (Role::User { room_id }) != user.role {
+    if (Role::User { room_id }) != user.role || user.role == Role::Admin {
         return Err(SearchError::UserNotInRoom);
     }
     let result = match state.client.search(&request.query).await {

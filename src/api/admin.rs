@@ -1,4 +1,5 @@
 use axum::{
+    extract::Path,
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -173,4 +174,50 @@ pub async fn create_room(
     rooms.push(room);
 
     Ok(res.into())
+}
+
+#[derive(Error, Display, Debug)]
+pub enum DeleteRoomsError {
+    /// Unauthorized
+    Unauthorized,
+    /// Room id does not exist
+    RoomIdDoesNotExist,
+    /// Internal error
+    InternalError,
+}
+
+impl IntoResponse for DeleteRoomsError {
+    fn into_response(self) -> Response {
+        let status = match self {
+            DeleteRoomsError::Unauthorized => StatusCode::UNAUTHORIZED,
+            DeleteRoomsError::RoomIdDoesNotExist => StatusCode::NOT_FOUND,
+            DeleteRoomsError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        let body = self.to_string();
+
+        (status, body).into_response()
+    }
+}
+
+pub async fn delete_room(user: User, Path(room_id): Path<RoomID>) -> Result<(), DeleteRoomsError> {
+    if user.role != Role::Admin {
+        return Err(DeleteRoomsError::Unauthorized);
+    }
+
+    let mut rooms = ROOMS.write().map_err(|_| DeleteRoomsError::InternalError)?;
+
+    // Check if the room exists
+    let Some(index) = rooms.iter().position(|r| r.id == room_id) else {
+        return Err(DeleteRoomsError::RoomIdDoesNotExist);
+    };
+
+    let room = rooms.remove(index);
+
+    let mut users = USERS.write().map_err(|_| DeleteRoomsError::InternalError)?;
+
+    // Remove all users from the room
+    users.retain(|u| u.role != Role::User { room_id: room.id });
+
+    Ok(())
 }

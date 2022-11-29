@@ -3,7 +3,7 @@ use std::{env, sync::Arc};
 use crate::utils::lastfm::Client;
 use axum::{
     http::StatusCode,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use tower_http::trace::TraceLayer;
@@ -30,6 +30,7 @@ pub fn router() -> Router {
         // .route("/admin/rooms", get(admin::get_rooms))
         .route("/room/all", get(admin::get_rooms))
         .route("/room", post(admin::create_room))
+        .route("/room/:room", delete(admin::delete_room))
         .route("/room/:room/join", get(room::join))
         .route("/room/:room/musics", get(room::get_musics))
         .route("/room/:room/search", get(search::search))

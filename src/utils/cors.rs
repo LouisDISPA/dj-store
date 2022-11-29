@@ -11,7 +11,7 @@ use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 pub fn init(app: Router) -> Router {
     if let Ok(var) = env::var("CORS_ALLOWED_ORIGINS") {
         let origins = parse_allow_origin(&var);
-        let methods = vec![Method::GET, Method::POST];
+        let methods = vec![Method::GET, Method::POST, Method::DELETE];
         let headers = [AUTHORIZATION, CONTENT_TYPE];
         info!("CORS allowed origins: {:?}", origins);
         info!("CORS allowed methods: {:?}", methods);
