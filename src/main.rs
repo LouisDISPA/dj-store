@@ -24,7 +24,7 @@ async fn main() {
     let app = ui::mount(app);
 
     // Start listening on the given address.
-    let addr = "127.0.0.1:3000".parse().unwrap();
+    let addr = "0.0.0.0:3000".parse().unwrap();
     info!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

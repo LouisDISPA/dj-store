@@ -2,10 +2,10 @@
 	export let id: number;
 	export let title: string;
 	export let artist: string;
-	export let is_voted: boolean = false;
+	export let is_voted = false;
 	export let votes: number | undefined = undefined;
 
-	export let onVote: (is_voted: boolean, id: number) => void = () => {};
+	export let onVote: (is_voted: boolean, id: number) => void;
 
 	function toogleVote() {
 		onVote(!is_voted, id);

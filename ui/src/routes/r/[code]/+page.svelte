@@ -35,7 +35,9 @@
 
 <div class="grid-cols-1">
 	{#if musics}
-		<Search onSubmit={onSearch} />
+		<div class="flex flex-wrap justify-center items-center">
+			<Search onSubmit={onSearch} />
+		</div>
 		<Table>
 			{#each musics as music}
 				<MusicTile {...music} {onVote} />

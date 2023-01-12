@@ -20,7 +20,7 @@
 	<h1 class="text-2xl font-bold p-2">Enter a code</h1>
 	<PassCode bind:input onSubmit={goToPage} />
 	<div>
-		<Button label="Scan QR Code" onSubmit={() => goto('/scan')} disabled />
+		<Button label="Scan QR Code" onSubmit={() => goto('/scan')} />
 		<Button label="Connect" type="primary" onSubmit={goToPage} {loading} />
 	</div>
 </div>

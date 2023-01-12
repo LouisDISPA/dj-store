@@ -53,8 +53,6 @@ impl<S: Send + Sync> FromRequestParts<S> for User {
 pub enum JwtVerifyError {
     /// The JWT is invalid: {0}
     InvalidJwt(String),
-    /// The JWT is expired
-    ExpiredJwt,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -98,8 +96,10 @@ pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
         Err(e) => return Err(JwtVerifyError::InvalidJwt(e.to_string())),
     };
     let now = Utc::now().timestamp();
-    if claim.exp < now || claim.iat > now {
-        return Err(JwtVerifyError::ExpiredJwt);
+    if claim.iat > now {
+        return Err(JwtVerifyError::InvalidJwt(
+            "Token is not valid yet".to_string(),
+        ));
     }
     Ok(claim.user)
 }

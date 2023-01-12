@@ -38,10 +38,12 @@ async function joinRoom(code: string): Promise<string> {
 
 	if (authToken) {
 		const tokenData = JSON.parse(atob(authToken.split('.')[1]));
+
 		if (tokenData.role === 'Admin') {
 			return authToken;
 		}
-		const isInRoom = tokenData.rooms_id == code;
+
+		const isInRoom = tokenData.room_id === code;
 		if (isInRoom) {
 			return authToken;
 		}
@@ -66,6 +68,7 @@ async function getMusics(code: string, authToken: string): Promise<Music[]> {
 		}
 	});
 	if (!res.ok) {
+		localStorage.removeItem('authToken');
 		const message = res.statusText;
 		const detail = await res.text();
 		throw error(res.status, { message, detail });
