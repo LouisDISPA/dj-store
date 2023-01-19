@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct LastFmError {
-    error: i32,
+    error: u16,
     message: String,
 }
 
@@ -66,7 +66,15 @@ impl Client {
                 ("format", "json"),
                 ("track", query),
             ]);
-        let result = request.send().await.unwrap();
+        let result = match request.send().await {
+            Ok(r) => r,
+            Err(err) => {
+                return LastFmResult::Err(LastFmError {
+                    error: err.status().unwrap_or_default().as_u16(),
+                    message: err.without_url().to_string(),
+                });
+            }
+        };
         result.json().await.unwrap()
     }
 }

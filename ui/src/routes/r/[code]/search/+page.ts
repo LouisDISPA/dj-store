@@ -26,17 +26,22 @@ export const load: PageLoad<PageData> = async ({ params, url }) => {
 	const authToken = localStorage.getItem('authToken');
 
 	if (!authToken) {
+		console.log('no token');
+		
 		throw redirect(301, `/r/${roomCode}`);
 	}
 
 	const tokenData = JSON.parse(atob(authToken.split('.')[1]));
-	if (tokenData.role !== 'Admin' && tokenData.rooms_id !== roomCode) {
+	if (tokenData.role !== 'Admin' && tokenData.room_id !== roomCode) {
+		console.log('not admin or not in room');
+		
 		throw redirect(301, `/r/${roomCode}`);
 	}
 
 	const query = url.searchParams.get('query');
 
 	if (!query) {
+		console.log('no query');
 		throw redirect(301, `/r/${roomCode}`);
 	}
 

@@ -17,7 +17,7 @@
 
 	onDestroy(stopStream);
 
-	onMount(function () {
+	onMount(async function () {
 		const video = document.createElement('video');
 		const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
 		const canvas = canvasElement?.getContext('2d') as CanvasRenderingContext2D;
@@ -36,7 +36,11 @@
 				video.play();
 				stream_outer = stream;
 				requestAnimationFrame(tick);
-			});
+			})
+			.catch(function (err) {
+				alert('Failed to get camera access.');
+				goto('/');
+			})
 
 		function tick() {
 			if (video.readyState === video.HAVE_ENOUGH_DATA) {

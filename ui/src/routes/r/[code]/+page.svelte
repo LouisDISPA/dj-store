@@ -9,8 +9,10 @@
 	export let data: PageData;
 	const { musics, authToken, roomCode } = data;
 
-	function onSearch(search: string) {
-		goto(`/r/${roomCode}/search?query=${search}`);
+	async function onSearch(search: string)  {
+		console.log('onSearch');
+		
+		await goto(`/r/${roomCode}/search?query=${search}`);
 	}
 
 	async function onVote(is_voted: boolean, id: number) {
@@ -39,7 +41,7 @@
 			<Search onSubmit={onSearch} />
 		</div>
 		<Table>
-			{#each musics as music}
+			{#each musics as music (music.id)}
 				<MusicTile {...music} {onVote} />
 			{/each}
 		</Table>

@@ -14,7 +14,9 @@
 	let musics = data.musics;
 
 	async function onSearch(search: string) {
-		goto(`/r/${roomCode}/search?query=${search}`);
+		console.log('onSearch');
+		
+		await goto(`/r/${roomCode}/search?query=${search}`);
 		musics = await getSearch(roomCode, authToken, search);
 	}
 
@@ -42,7 +44,7 @@
 	{#if musics}
 		<Search onSubmit={onSearch} />
 		<Table>
-			{#each musics as music}
+			{#each musics as music (music.id)}
 				<MusicTile {...music} {onVote} />
 			{/each}
 		</Table>
