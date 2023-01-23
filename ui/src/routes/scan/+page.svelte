@@ -1,25 +1,27 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Button from '$lib/Button.svelte';
-	import jsQR from 'jsqr';
+	import Hero from '$lib/Hero.svelte';
+	import Spinner from '$lib/Spinner.svelte';
 	import { onDestroy, onMount } from 'svelte';
 
-	let stream_outer: undefined | MediaStream;
-	let loading = false;
+	let stream: undefined | MediaStream;
+	let loading = true;
 	let stopped = false;
+	let canvasElement: HTMLCanvasElement;
 
 	const stopStream = () => {
 		stopped = true;
-		if (stream_outer) {
-			stream_outer.getTracks().forEach((track) => track.stop());
+		if (stream) {
+			stream.getTracks().forEach((track) => track.stop());
 		}
 	};
 
 	onDestroy(stopStream);
 
 	onMount(async function () {
+		const jsQR = (await import('jsqr')).default;
 		const video = document.createElement('video');
-		const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
 		const canvas = canvasElement?.getContext('2d') as CanvasRenderingContext2D;
 
 		if (canvas == null) {
@@ -30,17 +32,18 @@
 		// Use facingMode: environment to attemt to get the front camera on phones
 		navigator.mediaDevices
 			.getUserMedia({ video: { facingMode: 'environment' } })
-			.then(function (stream) {
-				video.srcObject = stream;
+			.then(function (mediaStream) {
+				video.srcObject = mediaStream;
 				video.setAttribute('playsinline', 'true'); // required to tell iOS safari we don't want fullscreen
 				video.play();
-				stream_outer = stream;
+				stream = mediaStream;
 				requestAnimationFrame(tick);
 			})
-			.catch(function (err) {
+			.catch(function () {
+				loading = false;
 				alert('Failed to get camera access.');
 				goto('/');
-			})
+			});
 
 		function tick() {
 			if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -53,45 +56,42 @@
 				var code = jsQR(imageData.data, imageData.width, imageData.height, {
 					inversionAttempts: 'dontInvert'
 				});
-				if (code) {
-					if (code.data.startsWith('http')) {
-						if (code.data.startsWith(document.location.origin)) {
-							stopStream();
-							canvasElement.hidden = true;
-							goto(code.data.substring(document.location.origin.length));
-						} else {
-							alert('Invalid QR Code');
-						}
-					}
-				}
+				if (code) checkQrCode(code);
 			}
 			if (!stopped) {
 				requestAnimationFrame(tick);
 			}
 		}
 	});
+
+	function checkQrCode(code: { data: string }) {
+		if (!code.data.startsWith('http')) {
+			return;
+		}
+		if (!code.data.startsWith(document.location.origin)) {
+			alert('Invalid QR Code');
+		}
+		stopStream();
+		goto(code.data.substring(document.location.origin.length));
+	}
 </script>
 
-<div
-	class="absolute inset-0 h-screen p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-modal md:h-full"
->
-	<div class="relative w-full h-full max-w-2xl md:h-auto">
-		<!-- Modal content -->
-		<div class="relative bg-base-100 rounded-lg shadow-lg">
-			<!-- Modal header -->
-			<h3 class="text-xl font-semibold text-center">Scan QR Code</h3>
-			<!-- Modal body -->
-			<div class="p-6 space-y-6">
-				<canvas id="canvas" hidden />
+<Hero>
+	<!-- Modal content -->
+	<div class="bg-base-100 rounded-lg shadow-lg">
+		<!-- Modal header -->
+		<h3 class="text-xl font-semibold text-center pt-4 pb-3">Scan QR Code</h3>
+		<!-- Modal body -->
+		<div class="p-6 space-y-6 stack">
+			<canvas bind:this={canvasElement} hidden />
 
-				{#if loading || stopped}
-					<div class="flex items-center justify-center">loading...</div>
-				{/if}
-			</div>
-			<!-- Modal footer -->
-			<div class="flex items-center rounded p-3">
-				<Button label="Cancel" type="primary" onSubmit={() => goto('/')} />
-			</div>
+			{#if loading && !stopped}
+				<Spinner />
+			{/if}
+		</div>
+		<!-- Modal footer -->
+		<div class="flex items-center rounded p-3">
+			<Button label="Cancel" type="primary" onSubmit={() => goto('/')} />
 		</div>
 	</div>
-</div>
+</Hero>

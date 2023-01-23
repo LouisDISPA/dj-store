@@ -10,6 +10,9 @@
 	function toogleVote() {
 		onVote(!is_voted, id);
 		is_voted = !is_voted;
+		if (votes) {
+			votes += is_voted ? 1 : -1;
+		}
 	}
 </script>
 
@@ -39,6 +42,9 @@
 				on:change={toogleVote}
 				checked={is_voted}
 			/>
+			<p class="ml-2">
+				{votes}
+			</p>
 		</div>
 	</td>
 </tr>

@@ -9,9 +9,9 @@
 	export let data: PageData;
 	const { musics, authToken, roomCode } = data;
 
-	async function onSearch(search: string)  {
+	async function onSearch(search: string) {
 		console.log('onSearch');
-		
+
 		await goto(`/r/${roomCode}/search?query=${search}`);
 	}
 

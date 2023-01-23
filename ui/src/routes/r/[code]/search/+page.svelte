@@ -15,7 +15,7 @@
 
 	async function onSearch(search: string) {
 		console.log('onSearch');
-		
+
 		await goto(`/r/${roomCode}/search?query=${search}`);
 		musics = await getSearch(roomCode, authToken, search);
 	}

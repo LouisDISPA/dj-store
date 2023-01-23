@@ -27,14 +27,14 @@ export const load: PageLoad<PageData> = async ({ params, url }) => {
 
 	if (!authToken) {
 		console.log('no token');
-		
+
 		throw redirect(301, `/r/${roomCode}`);
 	}
 
 	const tokenData = JSON.parse(atob(authToken.split('.')[1]));
 	if (tokenData.role !== 'Admin' && tokenData.room_id !== roomCode) {
 		console.log('not admin or not in room');
-		
+
 		throw redirect(301, `/r/${roomCode}`);
 	}
 
