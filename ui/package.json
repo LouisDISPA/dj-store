@@ -37,6 +37,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"jsqr": "^1.4.0"
+		"jsqr": "^1.4.0",
+		"qrious": "^4.0.2"
 	}
 }

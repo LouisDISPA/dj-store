@@ -9,6 +9,7 @@
 	export let active: boolean;
 
 	export let onDelete: (() => void) | undefined = undefined;
+	export let onShare: (() => void) | undefined = undefined;
 
 	const timeFormat = new Intl.DateTimeFormat(undefined, {
 		year: 'numeric',
@@ -34,6 +35,7 @@
 	</td>
 	<td>
 		<Button label="GoTo" type="primary" onSubmit={() => goto(`r/${id}`)} />
+		<Button label="Share" type="primary" onSubmit={onShare} />
 		<Button label="Delete" type="error" onSubmit={onDelete} />
 	</td>
 </tr>

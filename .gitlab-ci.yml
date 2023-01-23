@@ -28,7 +28,7 @@ pages:
   script:
     - cd ui/
     - yarn
-    - export VITE_BASE_HREF="/dj-store" && yarn build
+    - export VITE_BASE_HREF="/dj-store" && export VITE_API_URL="http://34.155.186.32" && yarn build
     - cp -r build/* ../public
   artifacts:
     paths:

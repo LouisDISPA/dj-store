@@ -1,5 +1,5 @@
 Arguments: 
-  /home/louis/.nvm/versions/node/v18.10.0/bin/node /home/louis/.cache/node/corepack/yarn/1.22.19/bin/yarn.js add jsQR
+  /home/louis/.nvm/versions/node/v18.10.0/bin/node /home/louis/.cache/node/corepack/yarn/1.22.19/bin/yarn.js add -D @types/qrious
 
 PATH: 
   /home/louis/android/sdk/platform-tools:/home/louis/android/sdk/tools/bin:/home/louis/android/sdk/tools:/home/louis/flutter/bin:/home/louis/.local/bin:/home/louis/.nvm/versions/node/v18.10.0/bin:/home/louis/android/sdk/platform-tools:/home/louis/android/sdk/tools/bin:/home/louis/android/sdk/tools:/home/louis/flutter/bin:/home/louis/.cargo/bin:/home/louis/.local/bin:/home/louis/android/sdk/platform-tools:/home/louis/android/sdk/tools/bin:/home/louis/android/sdk/tools:/home/louis/flutter/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
@@ -14,7 +14,7 @@ Platform:
   linux x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/jsQR: Not found
+  Error: https://registry.yarnpkg.com/@types%2fqrious: Not found
       at params.callback [as _callback] (/home/louis/.cache/node/corepack/yarn/1.22.19/lib/cli.js:66145:18)
       at self.callback (/home/louis/.cache/node/corepack/yarn/1.22.19/lib/cli.js:140890:22)
       at Request.emit (node:events:513:28)
@@ -64,7 +64,11 @@ npm manifest:
   		"typescript": "^4.7.4",
   		"vite": "^3.1.0"
   	},
-  	"type": "module"
+  	"type": "module",
+  	"dependencies": {
+  		"jsqr": "^1.4.0",
+  		"qrious": "^4.0.2"
+  	}
   }
 
 yarn manifest: 
@@ -1182,6 +1186,11 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz#9db7b59496ad3f3cfef30a75142d2d930ad72651"
     integrity sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==
   
+  jsqr@^1.4.0:
+    version "1.4.0"
+    resolved "https://registry.yarnpkg.com/jsqr/-/jsqr-1.4.0.tgz#8efb8d0a7cc6863cb6d95116b9069123ce9eb2d1"
+    integrity sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==
+  
   kleur@^4.1.4, kleur@^4.1.5:
     version "4.1.5"
     resolved "https://registry.yarnpkg.com/kleur/-/kleur-4.1.5.tgz#95106101795f7050c6c650f350c683febddb1780"
@@ -1499,6 +1508,11 @@ Lockfile:
     version "2.1.1"
     resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
     integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
+  
+  qrious@^4.0.2:
+    version "4.0.2"
+    resolved "https://registry.yarnpkg.com/qrious/-/qrious-4.0.2.tgz#09c4d4079d2b961617f62c69cff3b9bb66a39693"
+    integrity sha512-xWPJIrK1zu5Ypn898fBp8RHkT/9ibquV2Kv24S/JY9VYEhMBMKur1gHVsOiNUh7PHP9uCgejjpZUHUIXXKoU/g==
   
   queue-microtask@^1.2.2:
     version "1.2.3"

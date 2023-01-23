@@ -2,6 +2,7 @@
 	import Button from '$lib/Button.svelte';
 	import RoomTile from '$lib/RoomTile.svelte';
 	import Table from '$lib/Table.svelte';
+	import QrCodePopup from '$lib/QrCodePopup.svelte';
 	import { env } from '$lib/utils';
 	import type { PageData } from './$types';
 	import { convertApiRoom } from './+page';
@@ -62,13 +63,24 @@
 			alert(`Failed to create room: ${await res.text()}`);
 		}
 	}
+
+	let roomUrl: string | undefined;
+	function shareRoom(id: string) {
+		roomUrl = window.location.origin + `${env.BASE_HREF}/r/${id}`;
+	}
+	function closeShare() {
+		roomUrl = undefined;
+	}
 </script>
 
 <div class="grid-cols-1">
 	<Table {header}>
 		{#each rooms as room}
-			<RoomTile {...room} onDelete={() => deleteRoom(room.id)} />
+			<RoomTile {...room} onDelete={() => deleteRoom(room.id)} onShare={() => shareRoom(room.id)} />
 		{/each}
 	</Table>
 	<Button label="Create Room" type="primary" onSubmit={createRoom} />
+	{#if roomUrl}
+		<QrCodePopup url={roomUrl} onClose={closeShare} />
+	{/if}
 </div>
