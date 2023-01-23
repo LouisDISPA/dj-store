@@ -40,9 +40,11 @@
 	}
 </script>
 
-<div class="grid-cols-1">
+<div class="grid-cols-1 max-w-full">
 	{#if musics}
-		<Search onSubmit={onSearch} />
+		<div class="flex flex-wrap justify-center items-center">
+			<Search onSubmit={onSearch} />
+		</div>
 		<Table>
 			{#each musics as music (music.id)}
 				<MusicTile {...music} {onVote} />

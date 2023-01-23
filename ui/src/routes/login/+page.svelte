@@ -34,7 +34,7 @@
 			<h1 class="text-2xl font-bold">Login to your account</h1>
 		</div>
 		<TextInput label="Username" bind:value={username} />
-		<TextInput label="Password" bind:value={password} onSubmit={() => login()} />
+		<TextInput label="Password" bind:value={password} type="password" onSubmit={() => login()} />
 		<div class="mt-5">
 			<Button label="Connect" type="primary" onSubmit={() => login()} />
 		</div>

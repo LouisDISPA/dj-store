@@ -25,26 +25,28 @@
 		</div>
 	</td> -->
 	<td>
-		<div class="pl-6">
-			<div class="text-sm opacity-50">{artist}</div>
-		</div>
+		<div class="text-max text-sm opacity-50 truncate">{artist}</div>
+		<div class="text-max  font-bold truncate">{title}</div>
 	</td>
 	<td>
-		<div class="max-w-xs">
-			<div class="font-bold truncate">{title}</div>
-		</div>
-	</td>
-	<td>
-		<div class="rating">
+		<div class="rating flex items-center">
 			<input
 				type="checkbox"
 				class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80"
 				on:change={toogleVote}
 				checked={is_voted}
 			/>
-			<p class="ml-2">
-				{votes}
-			</p>
+			{#if votes}
+				<p class="ml-2">
+					{votes}
+				</p>
+			{/if}
 		</div>
 	</td>
 </tr>
+
+<style>
+	.text-max {
+		width: 65vw;
+	}
+</style>

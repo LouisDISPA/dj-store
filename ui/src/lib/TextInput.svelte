@@ -2,6 +2,7 @@
 	export let value = '';
 	export let label: string | undefined = undefined;
 	export let placeholder = '...';
+	export let type = 'text';
 	export let onSubmit: ((value: string) => void) | undefined = undefined;
 
 	function onChange(event: Event) {
@@ -16,7 +17,7 @@
 		</div>
 	{/if}
 	<input
-		type="text"
+		{type}
 		{placeholder}
 		class="input input-bordered"
 		on:change={onChange}
