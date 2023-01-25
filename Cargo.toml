@@ -7,8 +7,9 @@ build = "src/build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6.0", features = ["headers"] }
+axum = { version = "0.6.0", features = ["headers", "ws"] }
 chrono = { version = "0.4", features = ["serde"] }
+deku = "0.15.1"
 displaydoc = "0.2"
 dotenv = "0.15"
 jsonwebtoken = { version = "8.1.1", default-features = false }

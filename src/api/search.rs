@@ -88,6 +88,7 @@ pub async fn search(
             room.musics.push(Music {
                 title: music.name.to_owned(),
                 artist: music.artist.to_owned(),
+                votes: 0,
             });
             id
         });

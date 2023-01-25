@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tokio::sync::broadcast;
 
 use crate::{
     model::{self, Role, User, ROOMS, USERS},
@@ -161,6 +162,7 @@ pub async fn create_room(
         votes: Default::default(),
         musics: Default::default(),
         musics_to_id: Default::default(),
+        channel: broadcast::channel(10).0
     };
 
     let res = GetRoom {

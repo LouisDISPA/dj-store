@@ -13,7 +13,7 @@ use tokio::time::sleep;
 use uuid::Uuid;
 
 use crate::{
-    model::{Role, User, Vote, ROOMS, USERS},
+    model::{Role, User, Vote, VoteEvent, ROOMS, USERS},
     utils::jwt::UserToken,
 };
 
@@ -99,20 +99,30 @@ pub async fn vote(
         .find(|r| r.id == room_id)
         .ok_or(VoteError::RoomNotFound)?;
 
-    room.musics
-        .get(vote.music_id)
+    let music = room
+        .musics
+        .get_mut(vote.music_id)
         .ok_or(VoteError::MusicNotFound)?;
 
     if vote.voted {
+        music.votes += 1;
         room.votes.push(Vote {
             user_id: user.uid,
             music_id: vote.music_id,
             datetime: chrono::Utc::now(),
         });
     } else {
+        music.votes -= 1;
         room.votes
             .retain(|v| v.user_id != user.uid || v.music_id != vote.music_id);
     }
+
+    room.channel
+        .send(VoteEvent {
+            music_id: vote.music_id,
+            votes: music.votes,
+        })
+        .ok();
 
     Ok(Json(()))
 }

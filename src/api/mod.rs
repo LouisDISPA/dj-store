@@ -12,6 +12,7 @@ mod admin;
 mod room;
 pub mod room_id;
 mod search;
+mod websocket;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -36,7 +37,7 @@ pub fn router() -> Router {
         .route("/room/:room/search", get(search::search))
         // .route("/api/room/:room/artist", get(search::get_artist))
         .route("/room/:room/vote", post(room::vote))
-        // .route("/api/room/:room/ws", todo!())
+        .route("/room/:room/ws", get(websocket::handle_request))
         .fallback(api_fallback)
         .with_state(state)
 }
