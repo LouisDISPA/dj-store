@@ -162,7 +162,7 @@ pub async fn create_room(
         votes: Default::default(),
         musics: Default::default(),
         musics_to_id: Default::default(),
-        channel: broadcast::channel(10).0
+        channel: broadcast::channel(10).0,
     };
 
     let res = GetRoom {

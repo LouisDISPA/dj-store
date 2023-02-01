@@ -34,7 +34,7 @@
 		<div class="text-sm opacity-50">{timeFormat.format(creation)}</div>
 	</td>
 	<td>
-		<Button label="GoTo" type="primary" onSubmit={() => goto(`r/${id}`)} />
+		<Button label="GoTo" type="primary" onSubmit={() => goto(`admin/r/${id}`)} />
 		<Button label="Share" type="primary" onSubmit={onShare} />
 		<Button label="Delete" type="error" onSubmit={onDelete} />
 	</td>

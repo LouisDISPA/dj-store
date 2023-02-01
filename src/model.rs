@@ -1,8 +1,8 @@
 use chrono::prelude::*;
-use serde::{Deserialize, Serialize};
 use deku::prelude::*;
-use tokio::sync::broadcast::{Sender, self};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::RwLock};
+use tokio::sync::broadcast::{self, Sender};
 use uuid::Uuid;
 
 use crate::{api::room_id::RoomID, utils::jwt};
@@ -27,12 +27,14 @@ pub struct Room {
     pub creation: DateTime<Utc>,
     pub expiration: DateTime<Utc>,
     pub active: bool,
-    pub channel: Sender<VoteEvent>
+    pub channel: Sender<VoteEvent>,
 }
 
 #[derive(Debug, Clone, Copy, DekuRead, DekuWrite)]
 pub struct VoteEvent {
+    #[deku(bits = "32")]
     pub music_id: usize,
+    #[deku(bits = "32")]
     pub votes: usize,
 }
 
@@ -66,12 +68,12 @@ pub fn init() {
         Music {
             title: "Sandstorm".to_string(),
             artist: "Darude".to_string(),
-            votes: 0,
+            votes: 3,
         },
         Music {
             title: "Africa".to_string(),
             artist: "Toto".to_string(),
-            votes: 0,
+            votes: 1,
         },
     ];
 
@@ -131,6 +133,6 @@ pub fn init() {
         creation: Utc::now(),
         expiration: Utc::now() + chrono::Duration::days(1),
         active: true,
-        channel: broadcast::channel(10).0
+        channel: broadcast::channel(10).0,
     });
 }

@@ -38,7 +38,11 @@ impl<S: Send + Sync> FromRequestParts<S> for User {
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         const ERROR: StatusCode = StatusCode::UNAUTHORIZED;
 
-        let auth: TypedHeader<Authorization<Bearer>> = parts.extract().await.map_err(|_| ERROR)?;
+        let auth: TypedHeader<Authorization<Bearer>> = parts.extract().await.map_err(|e| {
+            log::error!("Missing authorization header: {}", e);
+            ERROR
+        })?;
+
         match verify(auth.token().trim()) {
             Ok(user) => Ok(user),
             Err(err) => {

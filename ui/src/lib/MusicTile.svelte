@@ -4,11 +4,12 @@
 	export let artist: string;
 	export let is_voted = false;
 	export let votes: number | undefined = undefined;
+	export let onVote: OnVote | undefined = undefined;
 
-	export let onVote: (is_voted: boolean, id: number) => void;
+	type OnVote = (is_voted: boolean, id: number) => void;
 
 	function toogleVote() {
-		onVote(!is_voted, id);
+		onVote?.(!is_voted, id);
 		is_voted = !is_voted;
 		if (votes) {
 			votes += is_voted ? 1 : -1;
@@ -30,12 +31,14 @@
 	</td>
 	<td>
 		<div class="rating flex items-center">
-			<input
-				type="checkbox"
-				class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80"
-				on:change={toogleVote}
-				checked={is_voted}
-			/>
+			{#if onVote}
+				<input
+					type="checkbox"
+					class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80"
+					on:change={toogleVote}
+					checked={is_voted}
+				/>
+			{/if}
 			{#if votes}
 				<p class="ml-2">
 					{votes}
