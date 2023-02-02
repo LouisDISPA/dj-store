@@ -226,7 +226,6 @@ pub async fn get_music_detail(
         .get(music_id)
         .ok_or(GetMusicError::MusicNotFound)?;
 
-
     Ok(Json(Music {
         id: music_id,
         title: music.title.clone(),
