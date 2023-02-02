@@ -1,5 +1,5 @@
 import { env } from '$lib/utils';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
 export type Music = {
@@ -25,7 +25,16 @@ export const load: PageLoad<PageData> = async ({ params }) => {
 
 		throw error(500, { message, detail });
 	}
-	const authToken = await joinRoom(roomCode);
+
+	const authToken = localStorage.getItem('authToken');
+	if (!authToken) {
+		return redirect(301, '/login');
+	}
+
+	const tokenData = JSON.parse(atob(authToken.split('.')[1]));
+	if (tokenData.role !== 'Admin') {
+		return redirect(301, '/login');
+	}
 
 	const musics = await getMusics(roomCode, authToken);
 	console.log(musics);
@@ -33,36 +42,8 @@ export const load: PageLoad<PageData> = async ({ params }) => {
 	return { musics, authToken, roomCode };
 };
 
-async function joinRoom(code: string): Promise<string> {
-	let authToken = localStorage.getItem('authToken');
-
-	if (authToken) {
-		const tokenData = JSON.parse(atob(authToken.split('.')[1]));
-
-		if (tokenData.role === 'Admin') {
-			return authToken;
-		}
-
-		const isInRoom = tokenData.room_id === code;
-		if (isInRoom) {
-			return authToken;
-		}
-	}
-
-	const res = await fetch(`${env.API_URL}/api/room/${code}/join`);
-	if (!res.ok) {
-		const message = res.statusText;
-		const detail = await res.text();
-		throw error(res.status, { message, detail });
-	}
-	authToken = (await res.json())['access_token'] as string;
-	localStorage.setItem('authToken', authToken);
-
-	return authToken;
-}
-
 async function getMusics(code: string, authToken: string): Promise<Music[]> {
-	const res = await fetch(`${env.API_URL}/api/room/${code}/musics`, {
+	const res = await fetch(`${env.API_URL}/api/room/${code}/music/voted`, {
 		headers: {
 			Authorization: `Bearer ${authToken}`
 		}

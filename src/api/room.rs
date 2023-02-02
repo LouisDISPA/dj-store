@@ -144,6 +144,8 @@ pub enum GetMusicError {
     UserNotInRoom,
     /// Internal error.
     InternalError,
+    /// Music not found.
+    MusicNotFound,
 }
 
 impl IntoResponse for GetMusicError {
@@ -154,6 +156,7 @@ impl IntoResponse for GetMusicError {
             RoomNotFound(_) => StatusCode::NOT_FOUND,
             UserNotInRoom => StatusCode::UNAUTHORIZED,
             InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            MusicNotFound => StatusCode::BAD_REQUEST,
         };
 
         (status, self.to_string()).into_response()
@@ -201,4 +204,34 @@ pub async fn get_musics(
         .collect::<Result<Vec<Music>, GetMusicError>>()?;
 
     Ok(Json(musics))
+}
+
+pub async fn get_music_detail(
+    Path((room_id, music_id)): Path<(RoomID, usize)>,
+    user: User,
+) -> Result<Json<Music>, GetMusicError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
+        return Err(GetMusicError::UserNotInRoom);
+    }
+
+    let rooms = ROOMS.read().map_err(|_| GetMusicError::InternalError)?;
+
+    let room = rooms
+        .iter()
+        .find(|r| r.id == room_id)
+        .ok_or(GetMusicError::RoomNotFound(room_id))?;
+
+    let music = room
+        .musics
+        .get(music_id)
+        .ok_or(GetMusicError::MusicNotFound)?;
+
+
+    Ok(Json(Music {
+        id: music_id,
+        title: music.title.clone(),
+        artist: music.artist.clone(),
+        votes: music.votes,
+        is_voted: false,
+    }))
 }

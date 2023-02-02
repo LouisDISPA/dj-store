@@ -2,7 +2,7 @@
 	import Hero from '$lib/Hero.svelte';
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Table from '$lib/Table.svelte';
-	import { env } from '$lib/utils';
+	import { env, goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -22,16 +22,18 @@
 
 			const music = musics.find((music) => music.id === id);
 			if (!music) {
-				// fetch(`${env.API_URL}/api/room/${roomCode}/music/${id}`, {
-				// 	method: 'GET',
-				// 	headers: {
-				// 		Authorization: `Bearer ${authToken}`,
-				// 	},
-				// })
-				// 	.then((res) => res.json())
-				// 	.then((music) => {
-				// 		musics.push(music);
-				// 	});
+				fetch(`${env.API_URL}/api/room/${roomCode}/music/${id}`, {
+					method: 'GET',
+					headers: {
+						Authorization: `Bearer ${authToken}`
+					}
+				})
+					.then((res) => res.json())
+					.then((music) => {
+						musics.push(music);
+						musics.sort((a, b) => b.votes - a.votes);
+						musics = musics;
+					});
 				return;
 			}
 
@@ -46,6 +48,7 @@
 
 		socket.onclose = () => {
 			console.log('Socket closed');
+			goto('/login');
 		};
 
 		socket.onerror = (error) => {

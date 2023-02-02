@@ -39,7 +39,7 @@
 					checked={is_voted}
 				/>
 			{/if}
-			{#if votes}
+			{#if votes !== undefined}
 				<p class="ml-2">
 					{votes}
 				</p>

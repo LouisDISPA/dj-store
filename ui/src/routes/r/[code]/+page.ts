@@ -62,7 +62,7 @@ async function joinRoom(code: string): Promise<string> {
 }
 
 async function getMusics(code: string, authToken: string): Promise<Music[]> {
-	const res = await fetch(`${env.API_URL}/api/room/${code}/musics`, {
+	const res = await fetch(`${env.API_URL}/api/room/${code}/music/voted`, {
 		headers: {
 			Authorization: `Bearer ${authToken}`
 		}
