@@ -42,13 +42,14 @@
 			musics = musics;
 		};
 
-		socket.onopen = () => {
+		socket.onopen = async () => {
 			socket.send(authToken);
 		};
 
-		socket.onclose = () => {
-			console.log('Socket closed');
-			goto('/login');
+		socket.onclose = (frame) => {
+			console.log(`WebSocket closed: ${frame.code} ${frame.reason}`);
+			alert('You have been disconnected from the room.');
+			goto('/admin');
 		};
 
 		socket.onerror = (error) => {

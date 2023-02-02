@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use axum::{
     extract::{
-        ws::{Message, WebSocket},
+        ws::{CloseFrame, Message, WebSocket},
         Path, WebSocketUpgrade,
     },
     response::Response,
@@ -40,13 +40,21 @@ async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receive
     let future = timeout(Duration::from_secs(3), socket.recv());
     match future.await {
         Err(_) => {
-            log::warn!("Socket auth timed out.");
-            socket.close().await.ok();
+            log::warn!("Socket auth timed out. (closing it)");
+            let close_frame = CloseFrame {
+                code: 4002,
+                reason: "Auth timed out".into(),
+            };
+            socket.send(Message::Close(Some(close_frame))).await.ok();
             return;
         }
         Ok(msg) => {
             if !is_admin(msg) {
-                socket.close().await.ok();
+                let close_frame = CloseFrame {
+                    code: 4001,
+                    reason: "Auth Failed".into(),
+                };
+                socket.send(Message::Close(Some(close_frame))).await.ok();
                 return;
             }
         }
@@ -55,46 +63,45 @@ async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receive
     loop {
         select! {
             msg = socket.recv() => {
-                if matches!(msg, Some(Ok(Message::Close(_))) | None | Some(Err(_))) {
-                    log::info!("Admin disconnected from room");
-                    return;
+                if matches!(msg, Some(Ok(Message::Close(_)) | Err(_)) | None) {
+                    break;
                 } else {
                     log::warn!("Received invalid websocket message: {:?}", msg);
                 }
             }
-            vote = room_receiver.recv() => {
-                let Ok(vote) = vote else {
-                    return;
-                };
+            Ok(vote) = room_receiver.recv() => {
                 let encoded = vote.to_bytes().unwrap();
                 if let Err(e) = socket.send(Message::Binary(encoded)).await {
-                    eprintln!("Error sending vote: {}", e);
+                    log::error!("Error sending vote: {}", e);
                     break;
                 }
             }
         }
     }
+    log::info!("Admin disconnected from room");
 }
 
 #[allow(clippy::needless_return)]
 fn is_admin(msg: Option<Result<Message, Error>>) -> bool {
     match msg {
         Some(Ok(Message::Text(token))) => {
-            let Ok(user) = jwt::verify(token.trim()) else {
-                log::warn!("Received invalid auth token: {}", token);
-                return false;
+            match jwt::verify(token.trim()) {
+                Ok(user) if user.role == Role::Admin => {
+                    log::info!("Admin connected to room");
+                    return true;
+                }
+                Ok(user) => {
+                    log::error!("Received non-admin auth: {:?}", user);
+                    return false;
+                }
+                Err(e) => {
+                    log::error!("Error verifying websocket auth token: {}", e);
+                    return false;
+                }
             };
-
-            if user.role != Role::Admin {
-                log::warn!("Received non-admin auth: {} (uid)", user.uid);
-                return false;
-            }
-
-            log::warn!("Admin connected to room");
-            return true;
         }
         Some(Err(e)) => {
-            eprintln!("Error receiving websocket auth token: {}", e);
+            log::error!("Error receiving websocket auth token: {}", e);
             return false;
         }
         None => {
@@ -102,7 +109,7 @@ fn is_admin(msg: Option<Result<Message, Error>>) -> bool {
             return false;
         }
         Some(Ok(msg)) => {
-            log::warn!("Received invalid auth message: {:?}", msg);
+            log::error!("Received invalid auth message: {:?}", msg);
             return false;
         }
     }
