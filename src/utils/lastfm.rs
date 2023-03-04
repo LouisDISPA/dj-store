@@ -43,16 +43,16 @@ pub struct LastFmTrack {
     pub artist: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client {
     client: reqwest::Client,
-    api_key: String,
+    api_key: &'static str,
 }
 impl Client {
-    pub fn new(api_key: &str) -> Self {
+    pub fn new(api_key: &'static str) -> Self {
         Self {
             client: reqwest::Client::new(),
-            api_key: api_key.to_string(),
+            api_key,
         }
     }
 

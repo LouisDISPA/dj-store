@@ -9,8 +9,24 @@ use displaydoc::Display;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
-use crate::model::User;
+use super::room_id::RoomID;
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "role")]
+pub enum Role {
+    Admin,
+    User { room_id: RoomID },
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct User {
+    pub uid: Uuid,
+    #[serde(flatten)]
+    pub role: Role,
+}
 
 // TODO: Better secret
 static JWT_SECRET: &str = "secret";

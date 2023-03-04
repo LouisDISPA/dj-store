@@ -38,19 +38,6 @@ pub struct VoteEvent {
     pub votes: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "role")]
-pub enum Role {
-    Admin,
-    User { room_id: RoomID },
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct User {
-    pub uid: Uuid,
-    #[serde(flatten)]
-    pub role: Role,
-}
 
 pub static ROOMS: RwLock<Vec<Room>> = RwLock::new(Vec::new());
 pub static USERS: RwLock<Vec<User>> = RwLock::new(Vec::new());

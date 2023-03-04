@@ -1,8 +1,10 @@
+use std::env;
+
 use axum::Router;
 use log::info;
+use sea_orm::Database;
 
 mod api;
-mod model;
 #[cfg(feature = "embed-ui")]
 mod ui;
 mod utils;
@@ -11,9 +13,15 @@ mod utils;
 async fn main() {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt::init();
-    model::init();
 
-    let api = api::router();
+
+    let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
+    let api_key = env::var("LASTFM_API_KEY").expect("Missing LASTFM_API_KEY env var");
+
+    let db = Database::connect(db_adress).await.expect("Failed to connect to database");
+
+
+    let api = api::router(db, api_key);
 
     // #[cfg(not(feature = "embed-ui"))]
     let api = utils::cors::init(api);

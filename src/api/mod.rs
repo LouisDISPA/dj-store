@@ -1,46 +1,42 @@
-use std::{env, sync::Arc};
 
-use crate::utils::lastfm::Client;
 use axum::{
     http::StatusCode,
     routing::{delete, get, post},
     Router,
 };
+use sea_orm::DatabaseConnection;
 use tower_http::trace::TraceLayer;
 
+use self::state::ApiState;
+
 mod admin;
-mod room;
-pub mod room_id;
-mod search;
-mod websocket;
+// mod room;
+// mod search;
+// mod websocket;
 
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub client: Arc<Client>,
-}
+mod state;
 
-pub fn router() -> Router {
-    let state = AppState {
-        client: Client::new(&env::var("LASTFM_API_KEY").expect("Missing LASTFM_API_KEY env var"))
-            .into(),
-    };
+pub fn router(db: DatabaseConnection, api_key: String) -> Router {
 
-    Router::new()
+    let state = state::ApiState::init(db, api_key);
+
+    Router::<ApiState>::new()
         .layer(TraceLayer::new_for_http())
         .route("/admin/login", post(admin::login))
         // .route("/admin/rooms", get(admin::get_rooms))
         .route("/room/all", get(admin::get_rooms))
         .route("/room", post(admin::create_room))
         .route("/room/:room", delete(admin::delete_room))
-        .route("/room/:room/join", get(room::join))
-        .route("/room/:room/music/voted", get(room::get_musics))
-        .route("/room/:room/music/:music", get(room::get_music_detail))
-        .route("/room/:room/search", get(search::search))
+        // .route("/room/:room/join", get(room::join))
+        // .route("/room/:room/music/voted", get(room::get_musics))
+        // .route("/room/:room/music/:music", get(room::get_music_detail))
+        // .route("/room/:room/search", get(search::search))
         // .route("/api/room/:room/artist", get(search::get_artist))
-        .route("/room/:room/vote", post(room::vote))
-        .route("/room/:room/ws", get(websocket::handle_request))
-        .fallback(api_fallback)
+        // .route("/room/:room/vote", post(room::vote))
+        // .route("/room/:room/ws", get(websocket::handle_request))
         .with_state(state)
+        .fallback(api_fallback)
+        
 }
 
 async fn api_fallback() -> (StatusCode, &'static str) {

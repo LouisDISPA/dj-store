@@ -8,7 +8,17 @@ use thiserror::Error;
 /// The room identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RoomID {
-    id: u32,
+    pub value: u32,
+}
+
+impl RoomID {
+    pub fn new(value: u32) -> Self {
+        Self { value }
+    }
+
+    pub fn value(&self) -> u32 {
+        self.value
+    }
 }
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -44,13 +54,13 @@ impl FromStr for RoomID {
                 return Err(InvalidChar);
             }
         }
-        Ok(RoomID { id })
+        Ok(RoomID { value: id })
     }
 }
 
 impl Display for RoomID {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut id = self.id;
+        let mut id = self.value;
         let mut s = ['A'; Self::CHAR_LENGTH];
         for i in (0..Self::CHAR_LENGTH).rev() {
             if id == 0 {
@@ -87,16 +97,16 @@ impl serde::Serialize for RoomID {
 mod tests {
     use super::*;
     const MAX: RoomID = RoomID {
-        id: 26_u32.pow(RoomID::CHAR_LENGTH as u32) - 1,
+        value: 26_u32.pow(RoomID::CHAR_LENGTH as u32) - 1,
     };
 
     #[test]
     fn test_parse() {
-        assert_eq!("AAAAAA".parse::<RoomID>(), Ok(RoomID { id: 0 }));
-        assert_eq!("AAAAAB".parse::<RoomID>(), Ok(RoomID { id: 1 }));
-        assert_eq!("AAAAAZ".parse::<RoomID>(), Ok(RoomID { id: 25 }));
-        assert_eq!("AAAABA".parse::<RoomID>(), Ok(RoomID { id: 26 }));
-        assert_eq!("AAAABB".parse::<RoomID>(), Ok(RoomID { id: 27 }));
+        assert_eq!("AAAAAA".parse::<RoomID>(), Ok(RoomID { value: 0 }));
+        assert_eq!("AAAAAB".parse::<RoomID>(), Ok(RoomID { value: 1 }));
+        assert_eq!("AAAAAZ".parse::<RoomID>(), Ok(RoomID { value: 25 }));
+        assert_eq!("AAAABA".parse::<RoomID>(), Ok(RoomID { value: 26 }));
+        assert_eq!("AAAABB".parse::<RoomID>(), Ok(RoomID { value: 27 }));
         assert_eq!("ZZZZZZ".parse::<RoomID>(), Ok(MAX));
     }
 
@@ -119,18 +129,18 @@ mod tests {
 
     #[test]
     fn test_display() {
-        assert_eq!(format!("{}", RoomID { id: 0 }), "AAAAAA");
-        assert_eq!(format!("{}", RoomID { id: 1 }), "AAAAAB");
-        assert_eq!(format!("{}", RoomID { id: 25 }), "AAAAAZ");
-        assert_eq!(format!("{}", RoomID { id: 26 }), "AAAABA");
-        assert_eq!(format!("{}", RoomID { id: 27 }), "AAAABB");
+        assert_eq!(format!("{}", RoomID { value: 0 }), "AAAAAA");
+        assert_eq!(format!("{}", RoomID { value: 1 }), "AAAAAB");
+        assert_eq!(format!("{}", RoomID { value: 25 }), "AAAAAZ");
+        assert_eq!(format!("{}", RoomID { value: 26 }), "AAAABA");
+        assert_eq!(format!("{}", RoomID { value: 27 }), "AAAABB");
         assert_eq!(format!("{}", MAX), "ZZZZZZ");
     }
 
     #[test]
     fn test_display_parse() {
         for i in 0..1000 {
-            let id = RoomID { id: i };
+            let id = RoomID { value: i };
             assert_eq!(format!("{}", id).parse::<RoomID>(), Ok(id));
         }
         let id = MAX;

@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -8,14 +8,16 @@ use chrono::{DateTime, Utc};
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tokio::sync::broadcast;
 
-use crate::{
-    model::{self, Role, User, ROOMS, USERS},
-    utils::jwt::UserToken,
+use entity::*;
+use sea_orm::{prelude::*, ActiveValue::Set, TryIntoModel};
+
+use crate::utils::{
+    jwt::{Role, User, UserToken},
+    room_id::RoomID,
 };
 
-use super::room_id::RoomID;
+use super::state::ApiState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginBody {
@@ -50,9 +52,12 @@ pub async fn login(Json(body): Json<LoginBody>) -> Result<Json<UserToken>, Login
         return Err(LoginError::InvalidCredentials);
     }
 
-    let users = USERS.read().unwrap();
-    let user = users.iter().find(|u| u.role == Role::Admin).unwrap();
-    Ok(Json(UserToken::new(*user)))
+    // TODO: Check if user is in database
+
+    Ok(Json(UserToken::new(User {
+        uid: Uuid::new_v4(),
+        role: Role::Admin,
+    })))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,8 +65,7 @@ pub struct GetRoom {
     id: RoomID,
     creation: DateTime<Utc>,
     expiration: DateTime<Utc>,
-    user_count: usize,
-    active: bool,
+    user_count: u32,
 }
 
 #[derive(Error, Display, Debug)]
@@ -85,24 +89,26 @@ impl IntoResponse for GetRoomsError {
     }
 }
 
-pub async fn get_rooms(user: User) -> Result<Json<Vec<GetRoom>>, GetRoomsError> {
+pub async fn get_rooms(
+    State(state): State<ApiState>,
+    user: User,
+) -> Result<Json<Vec<GetRoom>>, GetRoomsError> {
     if user.role != Role::Admin {
         return Err(GetRoomsError::Unauthorized);
     }
 
-    let rooms = ROOMS.read().map_err(|_| GetRoomsError::InternalError)?;
-    let users = USERS.read().map_err(|_| GetRoomsError::InternalError)?;
+    let rooms = room::Entity::find().all(&state.db).await.map_err(|e| {
+        log::error!("Failed to get rooms: {}", e);
+        GetRoomsError::InternalError
+    })?;
+
     let rooms = rooms
         .iter()
         .map(|r| GetRoom {
-            id: r.id,
-            creation: r.creation,
-            expiration: r.expiration,
-            user_count: users
-                .iter()
-                .filter(|u| u.role == Role::User { room_id: r.id })
-                .count(),
-            active: r.active,
+            id: RoomID::new(r.id),
+            creation: r.creation_date,
+            expiration: r.expiration_date,
+            user_count: r.user_count,
         })
         .collect();
 
@@ -119,7 +125,7 @@ pub struct CreateRoom {
 pub enum CreateRoomsError {
     /// Unauthorized
     Unauthorized,
-    /// Room id already exists
+    /// Room id already exists and is not expired
     RoomIdAlreadyExists,
     /// Internal error
     InternalError,
@@ -140,6 +146,7 @@ impl IntoResponse for CreateRoomsError {
 }
 
 pub async fn create_room(
+    State(state): State<ApiState>,
     user: User,
     Json(room): Json<CreateRoom>,
 ) -> Result<Json<GetRoom>, CreateRoomsError> {
@@ -147,35 +154,45 @@ pub async fn create_room(
         return Err(CreateRoomsError::Unauthorized);
     }
 
-    let mut rooms = ROOMS.write().map_err(|_| CreateRoomsError::InternalError)?;
+    // Check if the room public id already exists and is not expired
+    let room_exists = room::Entity::find()
+        .filter(room::Column::Id.eq(room.id.value()))
+        .one(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to check if room exists: {}", e);
+            CreateRoomsError::InternalError
+        })?
+        .is_some();
 
-    // Check if the room already exists
-    if rooms.iter().any(|r| r.id == room.id) {
+    if room_exists {
         return Err(CreateRoomsError::RoomIdAlreadyExists);
     }
 
-    let room = model::Room {
-        id: room.id,
-        creation: Utc::now(),
-        expiration: room.expiration,
-        active: true,
-        votes: Default::default(),
-        musics: Default::default(),
-        musics_to_id: Default::default(),
-        channel: broadcast::channel(10).0,
+    // Create the room in the database
+    let room_active_model = room::ActiveModel {
+        id: Set(room.id.value()),
+        expiration_date: Set(room.expiration),
+        ..Default::default()
     };
+    let room_model = room_active_model
+        .save(&state.db)
+        .await
+        .and_then(room::ActiveModel::try_into_model)
+        .map_err(|e| {
+            log::error!("Failed to create room: {}", e);
+            CreateRoomsError::InternalError
+        })?;
 
+    // Generate the view model
     let res = GetRoom {
         id: room.id,
-        creation: room.creation,
-        expiration: room.expiration,
-        active: room.active,
-        user_count: 0,
+        creation: room_model.creation_date,
+        expiration: room_model.expiration_date,
+        user_count: room_model.user_count,
     };
 
-    rooms.push(room);
-
-    Ok(res.into())
+    Ok(Json(res))
 }
 
 #[derive(Error, Display, Debug)]
@@ -202,24 +219,22 @@ impl IntoResponse for DeleteRoomsError {
     }
 }
 
-pub async fn delete_room(user: User, Path(room_id): Path<RoomID>) -> Result<(), DeleteRoomsError> {
+pub async fn delete_room(State(state): State<ApiState>, user: User, Path(room_id): Path<RoomID>) -> Result<(), DeleteRoomsError> {
     if user.role != Role::Admin {
         return Err(DeleteRoomsError::Unauthorized);
     }
 
-    let mut rooms = ROOMS.write().map_err(|_| DeleteRoomsError::InternalError)?;
+    let rows_affected  = room::Entity::delete_by_id(room_id.value())
+        .exec(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to delete room: {}", e);
+            DeleteRoomsError::InternalError
+        })?.rows_affected;
 
-    // Check if the room exists
-    let Some(index) = rooms.iter().position(|r| r.id == room_id) else {
+    if rows_affected == 0 {
         return Err(DeleteRoomsError::RoomIdDoesNotExist);
-    };
-
-    let room = rooms.remove(index);
-
-    let mut users = USERS.write().map_err(|_| DeleteRoomsError::InternalError)?;
-
-    // Remove all users from the room
-    users.retain(|u| u.role != Role::User { room_id: room.id });
-
+    }
+    
     Ok(())
 }

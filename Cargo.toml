@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 build = "src/build.rs"
 
+[workspace]
+members = [".", "entity", "migration"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -18,12 +21,15 @@ mime_guess = { version = "2", optional = true}
 rand = "0.8"
 reqwest = { version = "0.11", features = ["json"] }
 rust-embed = { version = "6", features = ["axum"], optional = true}
+sea-orm = { version = "0.11.0", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.3", features = ["cors", "trace"] }
 tracing-subscriber = "0.3"
 uuid = { version = "1", features = ["v4", "fast-rng", "serde"] }
+entity = { path = "entity" }
+migration = { path = "migration" }
 
 [features]
 default = ["embed-ui"]
