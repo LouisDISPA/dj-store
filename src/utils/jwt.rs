@@ -13,7 +13,6 @@ use uuid::Uuid;
 
 use super::room_id::RoomID;
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "role")]
 pub enum Role {
@@ -28,6 +27,22 @@ pub struct User {
     pub role: Role,
 }
 
+impl User {
+    pub fn new_user(room_id: RoomID) -> Self {
+        Self {
+            uid: Uuid::new_v4(),
+            role: Role::User { room_id },
+        }
+    }
+
+    pub fn new_admin() -> Self {
+        Self {
+            uid: Uuid::new_v4(),
+            role: Role::Admin,
+        }
+    }
+}
+
 // TODO: Better secret
 static JWT_SECRET: &str = "secret";
 
@@ -37,8 +52,8 @@ pub struct UserToken {
     token_type: &'static str,
 }
 
-impl UserToken {
-    pub fn new(user: User) -> Self {
+impl From<User> for UserToken {
+    fn from(user: User) -> Self {
         let token = sign(user);
         Self {
             access_token: token,

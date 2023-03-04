@@ -4,6 +4,7 @@ use sea_orm_migration::prelude::*;
 enum Room {
     Table,
     Id,
+    PublicId,
     // UserId,
     CreationDate,
     ExpirationDate,
@@ -66,6 +67,13 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .auto_increment()
                             .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Room::PublicId)
+                            .unsigned()
+                            .not_null()
+                            // If you remove unique key be sure that to check the expiration in the joining api
+                            .unique_key(),
                     )
                     // .col(
                     //     ColumnDef::new(Room::UserId)

@@ -54,10 +54,7 @@ pub async fn login(Json(body): Json<LoginBody>) -> Result<Json<UserToken>, Login
 
     // TODO: Check if user is in database
 
-    Ok(Json(UserToken::new(User {
-        uid: Uuid::new_v4(),
-        role: Role::Admin,
-    })))
+    Ok(Json(User::new_admin().into()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,6 +63,17 @@ pub struct GetRoom {
     creation: DateTime<Utc>,
     expiration: DateTime<Utc>,
     user_count: u32,
+}
+
+impl From<room::Model> for GetRoom {
+    fn from(model: room::Model) -> Self {
+        Self {
+            id: RoomID::new(model.public_id),
+            creation: model.creation_date,
+            expiration: model.expiration_date,
+            user_count: model.user_count,
+        }
+    }
 }
 
 #[derive(Error, Display, Debug)]
@@ -102,15 +110,7 @@ pub async fn get_rooms(
         GetRoomsError::InternalError
     })?;
 
-    let rooms = rooms
-        .iter()
-        .map(|r| GetRoom {
-            id: RoomID::new(r.id),
-            creation: r.creation_date,
-            expiration: r.expiration_date,
-            user_count: r.user_count,
-        })
-        .collect();
+    let rooms = rooms.into_iter().map(GetRoom::from).collect();
 
     Ok(Json(rooms))
 }
@@ -121,11 +121,21 @@ pub struct CreateRoom {
     expiration: DateTime<Utc>,
 }
 
+impl CreateRoom {
+    fn into_active_model(self) -> room::ActiveModel {
+        room::ActiveModel {
+            public_id: Set(self.id.value()),
+            expiration_date: Set(self.expiration),
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Error, Display, Debug)]
 pub enum CreateRoomsError {
     /// Unauthorized
     Unauthorized,
-    /// Room id already exists and is not expired
+    /// Room id already exists
     RoomIdAlreadyExists,
     /// Internal error
     InternalError,
@@ -154,9 +164,9 @@ pub async fn create_room(
         return Err(CreateRoomsError::Unauthorized);
     }
 
-    // Check if the room public id already exists and is not expired
+    // Check if the room public id already exists
     let room_exists = room::Entity::find()
-        .filter(room::Column::Id.eq(room.id.value()))
+        .filter(room::Column::PublicId.eq(room.id.value()))
         .one(&state.db)
         .await
         .map_err(|e| {
@@ -170,29 +180,18 @@ pub async fn create_room(
     }
 
     // Create the room in the database
-    let room_active_model = room::ActiveModel {
-        id: Set(room.id.value()),
-        expiration_date: Set(room.expiration),
-        ..Default::default()
-    };
-    let room_model = room_active_model
+    let room = room
+        .into_active_model()
         .save(&state.db)
         .await
         .and_then(room::ActiveModel::try_into_model)
+        .map(GetRoom::from)
         .map_err(|e| {
             log::error!("Failed to create room: {}", e);
             CreateRoomsError::InternalError
         })?;
 
-    // Generate the view model
-    let res = GetRoom {
-        id: room.id,
-        creation: room_model.creation_date,
-        expiration: room_model.expiration_date,
-        user_count: room_model.user_count,
-    };
-
-    Ok(Json(res))
+    Ok(Json(room))
 }
 
 #[derive(Error, Display, Debug)]
@@ -219,22 +218,27 @@ impl IntoResponse for DeleteRoomsError {
     }
 }
 
-pub async fn delete_room(State(state): State<ApiState>, user: User, Path(room_id): Path<RoomID>) -> Result<(), DeleteRoomsError> {
+pub async fn delete_room(
+    State(state): State<ApiState>,
+    user: User,
+    Path(room_id): Path<RoomID>,
+) -> Result<(), DeleteRoomsError> {
     if user.role != Role::Admin {
         return Err(DeleteRoomsError::Unauthorized);
     }
 
-    let rows_affected  = room::Entity::delete_by_id(room_id.value())
+    let rows_affected = room::Entity::delete_by_id(room_id.value())
         .exec(&state.db)
         .await
         .map_err(|e| {
             log::error!("Failed to delete room: {}", e);
             DeleteRoomsError::InternalError
-        })?.rows_affected;
+        })?
+        .rows_affected;
 
     if rows_affected == 0 {
         return Err(DeleteRoomsError::RoomIdDoesNotExist);
     }
-    
+
     Ok(())
 }

@@ -8,7 +8,7 @@ use thiserror::Error;
 /// The room identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RoomID {
-    pub value: u32,
+    value: u32,
 }
 
 impl RoomID {
