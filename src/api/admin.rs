@@ -122,7 +122,7 @@ pub struct CreateRoom {
 }
 
 impl CreateRoom {
-    fn into_active_model(self) -> room::ActiveModel {
+    fn into_active_model(&self) -> room::ActiveModel {
         room::ActiveModel {
             public_id: Set(self.id.value()),
             expiration_date: Set(self.expiration),
@@ -164,34 +164,28 @@ pub async fn create_room(
         return Err(CreateRoomsError::Unauthorized);
     }
 
-    // Check if the room public id already exists
-    let room_exists = room::Entity::find()
-        .filter(room::Column::PublicId.eq(room.id.value()))
-        .one(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to check if room exists: {}", e);
-            CreateRoomsError::InternalError
-        })?
-        .is_some();
-
-    if room_exists {
-        return Err(CreateRoomsError::RoomIdAlreadyExists);
-    }
-
     // Create the room in the database
-    let room = room
+    match room
         .into_active_model()
         .save(&state.db)
         .await
         .and_then(room::ActiveModel::try_into_model)
-        .map(GetRoom::from)
-        .map_err(|e| {
-            log::error!("Failed to create room: {}", e);
-            CreateRoomsError::InternalError
-        })?;
-
-    Ok(Json(room))
+        .map(GetRoom::from) 
+    {
+        Ok(room) => Ok(Json(room)),
+        Err(DbErr::Exec(RuntimeErr::SqlxError(err)))
+            // Ugly line to get the error code from sqlx and check if it's a duplicate key error
+            if err.as_database_error()
+                .and_then(|e| e.code())
+                .as_deref() == Some("2067") => {
+            log::error!("Failed to create room '{}': already exist", err);
+            Err(CreateRoomsError::RoomIdAlreadyExists)
+        }
+        Err(e) => {
+            log::error!("Failed to create room '{}': {}", room.id, e);
+            Err(CreateRoomsError::InternalError)
+        }
+    }
 }
 
 #[derive(Error, Display, Debug)]

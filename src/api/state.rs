@@ -2,7 +2,6 @@ use sea_orm::DatabaseConnection;
 
 use crate::utils::lastfm::Client;
 
-
 #[derive(Clone)]
 pub struct ApiState {
     pub db: DatabaseConnection,

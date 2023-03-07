@@ -1,4 +1,3 @@
-
 use axum::{
     http::StatusCode,
     routing::{delete, get, post},
@@ -17,7 +16,6 @@ mod room;
 mod state;
 
 pub fn router(db: DatabaseConnection, api_key: String) -> Router {
-
     let state = state::ApiState::init(db, api_key);
 
     Router::<ApiState>::new()
@@ -35,7 +33,6 @@ pub fn router(db: DatabaseConnection, api_key: String) -> Router {
         // .route("/room/:room/ws", get(websocket::handle_request))
         .with_state(state)
         .fallback(api_fallback)
-        
 }
 
 async fn api_fallback() -> (StatusCode, &'static str) {
