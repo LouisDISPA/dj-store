@@ -170,7 +170,7 @@ pub async fn create_room(
         .save(&state.db)
         .await
         .and_then(room::ActiveModel::try_into_model)
-        .map(GetRoom::from) 
+        .map(GetRoom::from)
     {
         Ok(room) => Ok(Json(room)),
         Err(DbErr::Exec(RuntimeErr::SqlxError(err)))

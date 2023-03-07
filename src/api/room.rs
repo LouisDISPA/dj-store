@@ -6,6 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use chrono::Utc;
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -15,7 +16,7 @@ use uuid::Uuid;
 use crate::utils::jwt::{Role, User, UserToken};
 
 use entity::*;
-use sea_orm::prelude::*;
+use sea_orm::{prelude::*, IntoActiveModel, QuerySelect, Set};
 
 use sea_orm::sea_query::Expr;
 
@@ -100,77 +101,95 @@ pub async fn join(
     }
 }
 
-// #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-// pub enum VoteError {
-//     /// The room does not exist.
-//     RoomNotFound,
-//     /// The user is not in the room.
-//     UserNotInRoom,
-//     /// The music does not exist.
-//     MusicNotFound,
-// }
+#[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum VoteError {
+    /// The room does not exist.
+    RoomNotFound,
+    /// The user is not in the room.
+    UserNotInRoom,
+    /// The music does not exist.
+    MusicNotFound,
+    /// Already voted for the music.
+    AlreadyVoted,
+    /// Internal error.
+    InternalError,
+}
 
-// impl IntoResponse for VoteError {
-//     fn into_response(self) -> Response {
-//         let status = match self {
-//             VoteError::RoomNotFound => StatusCode::NOT_FOUND,
-//             VoteError::UserNotInRoom => StatusCode::UNAUTHORIZED,
-//             VoteError::MusicNotFound => StatusCode::BAD_REQUEST,
-//         };
+impl IntoResponse for VoteError {
+    fn into_response(self) -> Response {
+        let status = match self {
+            VoteError::RoomNotFound => StatusCode::NOT_FOUND,
+            VoteError::UserNotInRoom => StatusCode::UNAUTHORIZED,
+            VoteError::AlreadyVoted => StatusCode::BAD_REQUEST,
+            VoteError::MusicNotFound => StatusCode::BAD_REQUEST,
+            VoteError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+        };
 
-//         let body = self.to_string();
+        let body = self.to_string();
 
-//         (status, body).into_response()
-//     }
-// }
+        (status, body).into_response()
+    }
+}
 
-// #[derive(Serialize, Deserialize)]
-// pub struct VoteBody {
-//     music_id: usize,
-//     voted: bool,
-// }
+#[derive(Serialize, Deserialize)]
+pub struct VoteBody {
+    music_id: u32,
+    voted: bool,
+}
 
-// pub async fn vote(
-//     Path(room_id): Path<RoomID>,
-//     user: User,
-//     Json(vote): Json<VoteBody>,
-// ) -> Result<Json<()>, VoteError> {
-//     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-//         return Err(VoteError::UserNotInRoom);
-//     }
-//     let mut rooms = ROOMS.write().unwrap();
-//     let room = rooms
-//         .iter_mut()
-//         .find(|r| r.id == room_id)
-//         .ok_or(VoteError::RoomNotFound)?;
+impl VoteBody {
+    fn into_active_model(&self, user_token: Uuid) -> vote::ActiveModel {
+        vote::ActiveModel {
+            user_token: Set(user_token),
+            music_id: Set(self.music_id),
+            vote_date: Set(Utc::now()),
+            like: Set(self.voted),
+            ..Default::default()
+        }
+    }
+}
 
-//     let music = room
-//         .musics
-//         .get_mut(vote.music_id)
-//         .ok_or(VoteError::MusicNotFound)?;
+pub async fn vote(
+    State(state): State<ApiState>,
+    Path(room_id): Path<RoomID>,
+    user: User,
+    Json(vote): Json<VoteBody>,
+) -> Result<(), VoteError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
+        return Err(VoteError::UserNotInRoom);
+    }
 
-//     if vote.voted {
-//         music.votes += 1;
-//         room.votes.push(Vote {
-//             user_id: user.uid,
-//             music_id: vote.music_id,
-//             datetime: chrono::Utc::now(),
-//         });
-//     } else {
-//         music.votes -= 1;
-//         room.votes
-//             .retain(|v| v.user_id != user.uid || v.music_id != vote.music_id);
-//     }
+    // TODO: Check if the music exists
 
-//     room.channel
-//         .send(VoteEvent {
-//             music_id: vote.music_id,
-//             votes: music.votes,
-//         })
-//         .ok();
+    let last_vote = vote::Entity::find()
+        .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
+        .filter(vote::Column::MusicId.eq(vote.music_id))
+        .filter(vote::Column::UserToken.eq(user.uid))
+        .group_by(vote::Column::UserToken)
+        .one(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to query last vote: {}", e);
+            VoteError::InternalError
+        })?
+        .map(|model| model.like);
 
-//     Ok(Json(()))
-// }
+    if last_vote == Some(vote.voted) {
+        return Err(VoteError::AlreadyVoted);
+    }
+
+    vote.into_active_model(user.uid)
+        .save(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to save vote: {}", e);
+            VoteError::InternalError
+        })?;
+
+    // TODO: send channel update
+
+    Ok(())
+}
 
 // #[derive(Serialize, Deserialize)]
 // pub struct Music {
