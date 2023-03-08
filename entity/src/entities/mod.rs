@@ -2,5 +2,6 @@
 
 pub mod prelude;
 
+pub mod music;
 pub mod room;
 pub mod vote;

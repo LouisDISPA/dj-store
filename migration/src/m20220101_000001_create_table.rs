@@ -19,10 +19,21 @@ enum Room {
 // }
 
 #[derive(Iden)]
+enum Music {
+    Table,
+    Id,
+    /// MusicBrainz ID
+    Mbid,
+    Title,
+    Artist,
+}
+
+#[derive(Iden)]
 enum Vote {
     Table,
     Id,
     UserToken,
+    RoomId,
     MusicId,
     VoteDate,
     Like,
@@ -66,7 +77,8 @@ impl MigrationTrait for Migration {
                             .unsigned()
                             .not_null()
                             .auto_increment()
-                            .primary_key(),
+                            .primary_key()
+                            .unique_key(),
                     )
                     .col(
                         ColumnDef::new(Room::PublicId)
@@ -107,6 +119,25 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .table(Music::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Music::Id)
+                            .unsigned()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Music::Mbid).uuid().not_null().unique_key())
+                    .col(ColumnDef::new(Music::Title).text().not_null())
+                    .col(ColumnDef::new(Music::Artist).text().not_null())
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
                     .table(Vote::Table)
                     .if_not_exists()
                     .col(
@@ -116,8 +147,23 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
+                    .col(ColumnDef::new(Vote::RoomId).unsigned().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from_tbl(Vote::Table)
+                            .from_col(Vote::RoomId)
+                            .to_tbl(Room::Table)
+                            .to_col(Room::Id),
+                    )
                     .col(ColumnDef::new(Vote::UserToken).uuid().not_null())
-                    .col(ColumnDef::new(Vote::MusicId).integer().not_null())
+                    .col(ColumnDef::new(Vote::MusicId).uuid().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from_tbl(Vote::Table)
+                            .from_col(Vote::MusicId)
+                            .to_tbl(Music::Table)
+                            .to_col(Music::Mbid),
+                    )
                     .col(
                         ColumnDef::new(Vote::VoteDate)
                             .date_time()
@@ -148,6 +194,10 @@ impl MigrationTrait for Migration {
 
         manager
             .drop_table(Table::drop().table(Vote::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(Music::Table).to_owned())
             .await?;
 
         return Ok(());

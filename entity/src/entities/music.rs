@@ -3,17 +3,14 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "vote")]
+#[sea_orm(table_name = "music")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: u32,
-    pub user_token: Uuid,
-    #[sea_orm(relation = "belongs_to", with = "room")]
-    pub room_id: u32,
-    #[sea_orm(relation = "belongs_to", with = "music_name")]
-    pub music_id: Uuid,
-    pub vote_date: DateTimeUtc,
-    pub like: bool,
+    /// MusicBrainz ID
+    pub mbid: Uuid,
+    pub title: String,
+    pub artist: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -17,6 +17,10 @@ async fn main() {
     let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
     let api_key = env::var("LASTFM_API_KEY").expect("Missing LASTFM_API_KEY env var");
 
+    musicbrainz_rs::config::set_user_agent(
+        "dj=store/0.1.0 (https://gitlab.insa-rouen.fr/ldispa/dj-store)",
+    );
+
     let db = Database::connect(db_adress)
         .await
         .expect("Failed to connect to database");

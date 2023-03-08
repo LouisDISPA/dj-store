@@ -5,15 +5,23 @@ use axum::{
     Json,
 };
 use displaydoc::Display;
+use musicbrainz_rs::entity::{recording::RecordingSearchQuery, release::Track};
+use sea_orm::{EntityTrait, Set, TryIntoModel};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    model::{Music, Role, User, ROOMS},
-    utils::lastfm::LastFmResult,
+use entity::*;
+use sea_orm::{prelude::*, sea_query::OnConflict};
+
+use crate::utils::{
+    jwt::{Role, User},
+    room_id::RoomID,
 };
 
-use super::{room_id::RoomID, AppState};
+use musicbrainz_rs::entity::recording::Recording;
+use musicbrainz_rs::prelude::*;
+
+use super::state::ApiState;
 
 #[derive(Serialize, Deserialize)]
 pub struct SearchRequest {
@@ -23,14 +31,22 @@ pub struct SearchRequest {
 #[derive(Serialize, Deserialize)]
 pub struct SearchMusic {
     pub title: String,
-    pub artist: String,
-    pub id: usize,
+    pub artist: Option<String>,
+    pub mbid: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Artist {
-    pub id: String,
-    pub name: String,
+impl From<Recording> for SearchMusic {
+    fn from(music: Recording) -> Self {
+        Self {
+            mbid: music.id,
+            title: music.title,
+            artist: music
+                .artist_credit
+                .as_deref()
+                .and_then(<[_]>::first)
+                .map(|a| a.name.clone()),
+        }
+    }
 }
 
 #[derive(Error, Display, Debug)]
@@ -39,8 +55,6 @@ pub enum SearchError {
     RoomNotFound,
     /// User not in room.
     UserNotInRoom,
-    /// Last.fm error: {0}
-    LastFmError(String),
     /// Internal error
     InternalError,
 }
@@ -51,7 +65,6 @@ impl IntoResponse for SearchError {
         let status = match self {
             UserNotInRoom => StatusCode::UNAUTHORIZED,
             RoomNotFound => StatusCode::UNAUTHORIZED,
-            LastFmError(_) => StatusCode::BAD_REQUEST,
             InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, self.to_string()).into_response()
@@ -60,44 +73,31 @@ impl IntoResponse for SearchError {
 
 // TODO: prevent user from searching too much
 pub async fn search(
+    State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,
     Query(request): Query<SearchRequest>,
     user: User,
-    State(state): State<AppState>,
 ) -> Result<Json<Vec<SearchMusic>>, SearchError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(SearchError::UserNotInRoom);
     }
-    let result = match state.client.search(&request.query).await {
-        LastFmResult::Ok { results } => results,
-        LastFmResult::Err(e) => return Err(SearchError::LastFmError(e.to_string())),
-    };
 
-    let mut rooms = ROOMS.write().map_err(|_| SearchError::InternalError)?;
-    let room = rooms
-        .iter_mut()
-        .find(|r| r.id == room_id)
-        .ok_or(SearchError::RoomNotFound)?;
+    let query = RecordingSearchQuery::query_builder()
+        .recording(&request.query)
+        .build();
 
-    let tracks = result.into_tracs();
-    let mut musics = Vec::with_capacity(tracks.len());
-    for music in tracks {
-        let full_name = format!("{} - {}", music.artist, music.name);
-        let entry = room.musics_to_id.entry(full_name).or_insert_with(|| {
-            let id = room.musics.len();
-            room.musics.push(Music {
-                title: music.name.to_owned(),
-                artist: music.artist.to_owned(),
-                votes: 0,
-            });
-            id
-        });
-        musics.push(SearchMusic {
-            title: music.name,
-            artist: music.artist,
-            id: *entry,
-        });
-    }
+    let result = Recording::search(query).execute().await.map_err(|e| {
+        log::error!("Failed to search music: {}", e);
+        SearchError::InternalError
+    })?;
+
+    // let mut musics = Vec::with_capacity(result.entities.len());
+
+    // for recording in result.entities {
+
+    // }
+
+    let musics = result.entities.into_iter().map(SearchMusic::from).collect();
 
     Ok(Json(musics))
 }

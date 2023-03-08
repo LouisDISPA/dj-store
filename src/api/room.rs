@@ -8,12 +8,16 @@ use axum::{
 };
 use chrono::Utc;
 use displaydoc::Display;
+use migration::SeaRc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use crate::utils::jwt::{Role, User, UserToken};
+use crate::utils::{
+    get_music_or_store_music,
+    jwt::{Role, User, UserToken},
+};
 
 use entity::*;
 use sea_orm::{prelude::*, IntoActiveModel, QuerySelect, Set};
@@ -133,14 +137,15 @@ impl IntoResponse for VoteError {
 
 #[derive(Serialize, Deserialize)]
 pub struct VoteBody {
-    music_id: u32,
+    music_id: Uuid,
     voted: bool,
 }
 
 impl VoteBody {
-    fn into_active_model(&self, user_token: Uuid) -> vote::ActiveModel {
+    fn into_active_model(&self, user_token: Uuid, room_id: u32) -> vote::ActiveModel {
         vote::ActiveModel {
             user_token: Set(user_token),
+            room_id: Set(room_id),
             music_id: Set(self.music_id),
             vote_date: Set(Utc::now()),
             like: Set(self.voted),
@@ -159,11 +164,16 @@ pub async fn vote(
         return Err(VoteError::UserNotInRoom);
     }
 
-    // TODO: Check if the music exists
+    let music = get_music_or_store_music(&state.db, vote.music_id)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to get music: {}", e);
+            VoteError::InternalError
+        })?;
 
     let last_vote = vote::Entity::find()
         .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
-        .filter(vote::Column::MusicId.eq(vote.music_id))
+        .filter(vote::Column::MusicId.eq(music.mbid))
         .filter(vote::Column::UserToken.eq(user.uid))
         .group_by(vote::Column::UserToken)
         .one(&state.db)
@@ -178,7 +188,7 @@ pub async fn vote(
         return Err(VoteError::AlreadyVoted);
     }
 
-    vote.into_active_model(user.uid)
+    vote.into_active_model(user.uid, room_id.value())
         .save(&state.db)
         .await
         .map_err(|e| {
