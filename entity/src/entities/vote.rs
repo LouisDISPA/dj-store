@@ -8,15 +8,33 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: u32,
     pub user_token: Uuid,
-    #[sea_orm(relation = "belongs_to", with = "room")]
     pub room_id: u32,
-    #[sea_orm(relation = "belongs_to", with = "music_name")]
     pub music_id: Uuid,
     pub vote_date: DateTimeUtc,
     pub like: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::music::Entity",
+        from = "Column::MusicId",
+        to = "super::music::Column::Mbid"
+    )]
+    Music,
+    #[sea_orm(
+        belongs_to = "super::room::Entity",
+        from = "Column::RoomId",
+        to = "super::room::Column::PublicId"
+    )]
+    Room,
+}
+
+// `Related` trait has to be implemented by hand
+impl Related<super::music::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Music.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}

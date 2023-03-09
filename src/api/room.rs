@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use axum::{
     extract::{Path, State},
@@ -6,9 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use chrono::Utc;
 use displaydoc::Display;
-use migration::SeaRc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::sleep;
@@ -20,7 +18,7 @@ use crate::utils::{
 };
 
 use entity::*;
-use sea_orm::{prelude::*, IntoActiveModel, QuerySelect, Set};
+use sea_orm::{prelude::*, DatabaseBackend, FromQueryResult, QuerySelect, Set, Statement};
 
 use sea_orm::sea_query::Expr;
 
@@ -142,12 +140,11 @@ pub struct VoteBody {
 }
 
 impl VoteBody {
-    fn into_active_model(&self, user_token: Uuid, room_id: u32) -> vote::ActiveModel {
+    fn to_active_model(&self, user_token: Uuid, room_id: u32) -> vote::ActiveModel {
         vote::ActiveModel {
             user_token: Set(user_token),
             room_id: Set(room_id),
             music_id: Set(self.music_id),
-            vote_date: Set(Utc::now()),
             like: Set(self.voted),
             ..Default::default()
         }
@@ -188,7 +185,7 @@ pub async fn vote(
         return Err(VoteError::AlreadyVoted);
     }
 
-    vote.into_active_model(user.uid, room_id.value())
+    vote.to_active_model(user.uid, room_id.value())
         .save(&state.db)
         .await
         .map_err(|e| {
@@ -201,110 +198,144 @@ pub async fn vote(
     Ok(())
 }
 
-// #[derive(Serialize, Deserialize)]
-// pub struct Music {
-//     id: usize,
-//     title: String,
-//     artist: String,
-//     votes: usize,
-//     is_voted: bool,
-// }
+#[derive(Serialize, Deserialize, FromQueryResult, Debug)]
+pub struct Music {
+    id: Uuid,
+    title: String,
+    artist: String,
+    votes: u32,
+}
 
-// #[derive(Error, Display, Debug)]
-// pub enum GetMusicError {
-//     /// Room not found.
-//     RoomNotFound(RoomID),
-//     /// User not in room.
-//     UserNotInRoom,
-//     /// Internal error.
-//     InternalError,
-//     /// Music not found.
-//     MusicNotFound,
-// }
+#[derive(Error, Display, Debug)]
+pub enum GetMusicError {
+    /// User not in room.
+    UserNotInRoom,
+    /// Internal error.
+    InternalError,
+    /// Music not found.
+    MusicNotFound,
+}
 
-// impl IntoResponse for GetMusicError {
-//     fn into_response(self) -> Response {
-//         use GetMusicError::*;
+impl IntoResponse for GetMusicError {
+    fn into_response(self) -> Response {
+        use GetMusicError::*;
 
-//         let status: StatusCode = match self {
-//             RoomNotFound(_) => StatusCode::NOT_FOUND,
-//             UserNotInRoom => StatusCode::UNAUTHORIZED,
-//             InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-//             MusicNotFound => StatusCode::BAD_REQUEST,
-//         };
+        let status: StatusCode = match self {
+            UserNotInRoom => StatusCode::UNAUTHORIZED,
+            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            MusicNotFound => StatusCode::BAD_REQUEST,
+        };
 
-//         (status, self.to_string()).into_response()
-//     }
-// }
+        (status, self.to_string()).into_response()
+    }
+}
 
-// pub async fn get_musics(
-//     Path(room_id): Path<RoomID>,
-//     user: User,
-// ) -> Result<Json<Vec<Music>>, GetMusicError> {
-//     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-//         return Err(GetMusicError::UserNotInRoom);
-//     }
+pub async fn get_musics(
+    State(state): State<ApiState>,
+    Path(room_id): Path<RoomID>,
+    user: User,
+) -> Result<Json<Vec<Music>>, GetMusicError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
+        return Err(GetMusicError::UserNotInRoom);
+    }
 
-//     let rooms = ROOMS.read().map_err(|_| GetMusicError::InternalError)?;
+    // TODO: Use ORM to replace this raw sql if possible.
+    let musics = Music::find_by_statement(Statement::from_sql_and_values(
+        DatabaseBackend::Sqlite,
+        "SELECT
+                    m.'mbid' AS 'id',
+                    m.'title',
+                    m.'artist',
+                    COUNT(v.'music_id') AS 'votes'
+                FROM
+                    (SELECT
+                        MAX('vote'.'vote_date') AS 'vote_date',
+                        'vote'.'music_id'
+                      FROM
+                        'vote'
+                        LEFT JOIN 'music' ON 'vote'.'music_id' = 'music'.'mbid'
+                      WHERE
+                        'vote'.'room_id' = ?
+                      GROUP BY
+                        'vote'.'music_id',
+                        'vote'.'user_token') v,
+                    'music' m
+                WHERE
+                    v.'music_id' = m.'mbid'
+                GROUP BY
+                    v.'music_id'
+                ORDER BY
+                    'votes' DESC
+                ",
+        [room_id.value().into()],
+    ))
+    .all(&state.db)
+    .await
+    .map_err(|e| {
+        log::error!("Failed to get musics: {}", e);
+        GetMusicError::InternalError
+    })?;
 
-//     let room = rooms
-//         .iter()
-//         .find(|r| r.id == room_id)
-//         .ok_or(GetMusicError::RoomNotFound(room_id))?;
+    // .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
+    // .column(vote::Column::MusicId)
+    // .filter(vote::Column::RoomId.eq(room_id.value()))
+    // .group_by(vote::Column::MusicId)
+    // .group_by(vote::Column::UserToken)
+    // .all(&state.db)
+    // .await
+    // .map_err(|e| {
+    //     log::error!("Failed to get musics: {}", e);
+    //     GetMusicError::InternalError
+    // })?;
 
-//     let mut music_vote = HashMap::new();
-//     for vote in room.votes.iter() {
-//         let (count, user_vote) = music_vote
-//             .entry(vote.music_id.to_owned())
-//             .or_insert((0, false));
-//         *count += 1;
-//         if vote.user_id == user.uid {
-//             *user_vote = true;
-//         }
-//     }
+    Ok(Json(musics))
+}
 
-//     let musics = music_vote
-//         .into_iter()
-//         .map(|(id, (votes, is_voted))| {
-//             let music = room.musics.get(id).ok_or(GetMusicError::InternalError)?;
-//             Ok(Music {
-//                 id,
-//                 title: music.title.clone(),
-//                 artist: music.artist.clone(),
-//                 votes,
-//                 is_voted,
-//             })
-//         })
-//         .collect::<Result<Vec<Music>, GetMusicError>>()?;
+pub async fn get_music_detail(
+    State(state): State<ApiState>,
+    Path((room_id, music_id)): Path<(RoomID, Uuid)>,
+    user: User,
+) -> Result<Json<Music>, GetMusicError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
+        return Err(GetMusicError::UserNotInRoom);
+    }
 
-//     Ok(Json(musics))
-// }
+    // TODO: Use ORM to replace this raw sql if possible.
+    let music = Music::find_by_statement(Statement::from_sql_and_values(
+        DatabaseBackend::Sqlite,
+        "SELECT
+                    m.'mbid' AS 'id',
+                    m.'title',
+                    m.'artist',
+                    COUNT(v.'user_token') AS 'votes'
+                FROM
+                    (SELECT
+                        MAX('vote'.'vote_date') AS 'vote_date',
+                        'vote'.'user_token'
+                    FROM
+                        'vote'
+                        LEFT JOIN 'music' ON 'vote'.'music_id' = 'music'.'mbid'
+                    WHERE
+                        'vote'.'room_id' = ? AND
+                        'vote'.'music_id' = ?
+                    GROUP BY
+                        'vote'.'user_token'
+                    ) v,
+                    'music' m
+                WHERE
+                    m.'mbid' = ?
+                ",
+        [room_id.value().into(), music_id.into(), music_id.into()],
+    ))
+    .one(&state.db)
+    .await
+    .map_err(|e| {
+        log::error!("Failed to get musics: {}", e);
+        GetMusicError::InternalError
+    })?;
 
-// pub async fn get_music_detail(
-//     Path((room_id, music_id)): Path<(RoomID, usize)>,
-//     user: User,
-// ) -> Result<Json<Music>, GetMusicError> {
-//     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-//         return Err(GetMusicError::UserNotInRoom);
-//     }
-
-//     let rooms = ROOMS.read().map_err(|_| GetMusicError::InternalError)?;
-
-//     let room = rooms
-//         .iter()
-//         .find(|r| r.id == room_id)
-//         .ok_or(GetMusicError::RoomNotFound(room_id))?;
-
-//     let music = room
-//         .musics
-//         .get(music_id)
-//         .ok_or(GetMusicError::MusicNotFound)?;
-
-//     Ok(Json(Music {
-//         id: music_id,
-//         title: music.title.clone(),
-//         artist: music.artist.clone(),
-//         votes: music.votes,
-//         is_voted: false,
-//     }))
-// }
+    match music {
+        Some(music) => Ok(Json(music)),
+        None => Err(GetMusicError::MusicNotFound),
+    }
+}

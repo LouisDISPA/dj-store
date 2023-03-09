@@ -153,7 +153,7 @@ impl MigrationTrait for Migration {
                             .from_tbl(Vote::Table)
                             .from_col(Vote::RoomId)
                             .to_tbl(Room::Table)
-                            .to_col(Room::Id),
+                            .to_col(Room::PublicId),
                     )
                     .col(ColumnDef::new(Vote::UserToken).uuid().not_null())
                     .col(ColumnDef::new(Vote::MusicId).uuid().not_null())
@@ -168,7 +168,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Vote::VoteDate)
                             .date_time()
                             .not_null()
-                            .default(Value::ChronoDateTime(None)),
+                            .default(Keyword::CurrentTimestamp),
                     )
                     .col(
                         ColumnDef::new(Vote::Like)

@@ -122,7 +122,7 @@ pub struct CreateRoom {
 }
 
 impl CreateRoom {
-    fn into_active_model(&self) -> room::ActiveModel {
+    fn to_active_model(&self) -> room::ActiveModel {
         room::ActiveModel {
             public_id: Set(self.id.value()),
             expiration_date: Set(self.expiration),
@@ -166,7 +166,7 @@ pub async fn create_room(
 
     // Create the room in the database
     match room
-        .into_active_model()
+        .to_active_model()
         .save(&state.db)
         .await
         .and_then(room::ActiveModel::try_into_model)

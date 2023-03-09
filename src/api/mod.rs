@@ -15,8 +15,8 @@ mod search;
 
 mod state;
 
-pub fn router(db: DatabaseConnection, api_key: String) -> Router {
-    let state = state::ApiState::init(db, api_key);
+pub fn router(db: DatabaseConnection) -> Router {
+    let state = state::ApiState::init(db);
 
     Router::<ApiState>::new()
         .layer(TraceLayer::new_for_http())
@@ -25,8 +25,8 @@ pub fn router(db: DatabaseConnection, api_key: String) -> Router {
         .route("/room", post(admin::create_room))
         .route("/room/:room", delete(admin::delete_room))
         .route("/room/:room/join", get(room::join))
-        // .route("/room/:room/music/voted", get(room::get_musics))
-        // .route("/room/:room/music/:music", get(room::get_music_detail))
+        .route("/room/:room/music/voted", get(room::get_musics))
+        .route("/room/:room/music/:music", get(room::get_music_detail))
         .route("/room/:room/vote", post(room::vote))
         .route("/room/:room/search", get(search::search))
         // .route("/api/room/:room/artist", get(search::get_artist))

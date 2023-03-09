@@ -15,7 +15,6 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
-    let api_key = env::var("LASTFM_API_KEY").expect("Missing LASTFM_API_KEY env var");
 
     musicbrainz_rs::config::set_user_agent(
         "dj=store/0.1.0 (https://gitlab.insa-rouen.fr/ldispa/dj-store)",
@@ -25,7 +24,7 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
-    let api = api::router(db, api_key);
+    let api = api::router(db);
 
     // #[cfg(not(feature = "embed-ui"))]
     let api = utils::cors::init(api);

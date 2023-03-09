@@ -5,13 +5,9 @@ use axum::{
     Json,
 };
 use displaydoc::Display;
-use musicbrainz_rs::entity::{recording::RecordingSearchQuery, release::Track};
-use sea_orm::{EntityTrait, Set, TryIntoModel};
+use musicbrainz_rs::entity::recording::RecordingSearchQuery;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-use entity::*;
-use sea_orm::{prelude::*, sea_query::OnConflict};
 
 use crate::utils::{
     jwt::{Role, User},
@@ -73,7 +69,6 @@ impl IntoResponse for SearchError {
 
 // TODO: prevent user from searching too much
 pub async fn search(
-    State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,
     Query(request): Query<SearchRequest>,
     user: User,
@@ -81,6 +76,8 @@ pub async fn search(
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(SearchError::UserNotInRoom);
     }
+
+    // TODO: check if room exists
 
     let query = RecordingSearchQuery::query_builder()
         .recording(&request.query)
