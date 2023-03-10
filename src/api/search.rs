@@ -28,13 +28,13 @@ pub struct SearchRequest {
 pub struct SearchMusic {
     pub title: String,
     pub artist: Option<String>,
-    pub mbid: String,
+    pub id: String,
 }
 
 impl From<Recording> for SearchMusic {
     fn from(music: Recording) -> Self {
         Self {
-            mbid: music.id,
+            id: music.id,
             title: music.title,
             artist: music
                 .artist_credit
