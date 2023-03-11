@@ -29,7 +29,6 @@
 		});
 
 		if (!response.ok) {
-			alert(`Error voting: ${await response.text()}`);
 			throw new Error(`Error voting: ${await response.text()}`);
 		}
 	}

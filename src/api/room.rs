@@ -20,7 +20,7 @@ use crate::utils::{
 
 use entity::*;
 use sea_orm::{
-    prelude::*, DatabaseBackend, FromQueryResult, QuerySelect, QueryTrait, Set, Statement,
+    prelude::*, DatabaseBackend, FromQueryResult, JoinType, QuerySelect, QueryTrait, Set, Statement,
 };
 
 use sea_orm::sea_query::{Alias, Expr, Query};
@@ -201,6 +201,9 @@ pub async fn vote(
     Ok(())
 }
 
+// TODO: Maybe use struct name to generate column name for the query
+// Like in the entity crate when deriving Model on a struct
+// a column name is generated from the struct field name
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct Music {
     id: Uuid,
@@ -242,44 +245,41 @@ pub async fn get_musics(
         return Err(GetMusicError::UserNotInRoom);
     }
 
-    // TODO: Use ORM to replace this raw sql if possible.
-    let musics = Music::find_by_statement(Statement::from_sql_and_values(
+    let all_votes = vote::Entity::find()
+        .select_only()
+        .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
+        .column(vote::Column::Like)
+        .column(vote::Column::MusicId)
+        .filter(vote::Column::RoomId.eq(room_id.value()))
+        .group_by(vote::Column::UserToken)
+        .group_by(vote::Column::MusicId)
+        .into_query();
+
+    let (sql, values) = Query::select()
+        .columns([music::Column::Title, music::Column::Artist])
+        .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
+        .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
+        .group_by_col(music::Column::Mbid)
+        .from_subquery(all_votes, vote::Entity)
+        .join(
+            JoinType::LeftJoin,
+            music::Entity,
+            Expr::col(vote::Column::MusicId).equals(music::Column::Mbid),
+        )
+        .build(SqliteQueryBuilder);
+
+    return Music::find_by_statement(Statement::from_sql_and_values(
         DatabaseBackend::Sqlite,
-        "SELECT
-                    m.'mbid' AS 'id',
-                    m.'title',
-                    m.'artist',
-                    COUNT(v.'music_id') AS 'votes'
-                FROM
-                    (SELECT
-                        MAX('vote'.'vote_date') AS 'vote_date',
-                        'vote'.'music_id'
-                      FROM
-                        'vote'
-                        LEFT JOIN 'music' ON 'vote'.'music_id' = 'music'.'mbid'
-                      WHERE
-                        'vote'.'room_id' = ?
-                      GROUP BY
-                        'vote'.'music_id',
-                        'vote'.'user_token') v,
-                    'music' m
-                WHERE
-                    v.'music_id' = m.'mbid'
-                GROUP BY
-                    v.'music_id'
-                ORDER BY
-                    'votes' DESC
-                ",
-        [room_id.value().into()],
+        &sql,
+        values,
     ))
     .all(&state.db)
     .await
+    .map(Json::from)
     .map_err(|e| {
         log::error!("Failed to get musics: {}", e);
         GetMusicError::InternalError
-    })?;
-
-    Ok(Json(musics))
+    });
 }
 
 pub async fn get_music_detail(
@@ -291,40 +291,6 @@ pub async fn get_music_detail(
         return Err(GetMusicError::UserNotInRoom);
     }
 
-    // TODO: Use ORM to replace this raw sql if possible.
-    // let music = Music::find_by_statement(Statement::from_sql_and_values(
-    //     DatabaseBackend::Sqlite,
-    //     "SELECT
-    //                 m.'mbid' AS 'id',
-    //                 m.'title',
-    //                 m.'artist',
-    //                 COUNT(v.'user_token') AS 'votes'
-    //             FROM
-    //                 (SELECT
-    //                     MAX('vote'.'vote_date') AS 'vote_date',
-    //                     'vote'.'user_token'
-    //                 FROM
-    //                     'vote'
-    //                     LEFT JOIN 'music' ON 'vote'.'music_id' = 'music'.'mbid'
-    //                 WHERE
-    //                     'vote'.'room_id' = ? AND
-    //                     'vote'.'music_id' = ?
-    //                 GROUP BY
-    //                     'vote'.'user_token'
-    //                 ) v,
-    //                 'music' m
-    //             WHERE
-    //                 m.'mbid' = ?
-    //             ",
-    //     [room_id.value().into(), music_id.into(), music_id.into()],
-    // ))
-    // .one(&state.db)
-    // .await
-    // .map_err(|e| {
-    //     log::error!("Failed to get musics: {}", e);
-    //     GetMusicError::InternalError
-    // })?;
-
     let all_votes = vote::Entity::find()
         .select_only()
         .column_as(vote::Column::VoteDate.max(), "vote_date")
@@ -335,16 +301,11 @@ pub async fn get_music_detail(
         .group_by(vote::Column::UserToken)
         .into_query();
 
-    let vote_alias = Alias::new("v");
-
     let (sql, values) = Query::select()
         .columns([music::Column::Title, music::Column::Artist])
         .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
-        .expr_as(
-            Expr::col((vote_alias.clone(), vote::Column::Like)).sum(),
-            Alias::new("votes"),
-        )
-        .from_subquery(all_votes, vote_alias.clone())
+        .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
+        .from_subquery(all_votes, vote::Entity)
         .from(music::Entity)
         .and_where(music::Column::Mbid.eq(music_id))
         .build(SqliteQueryBuilder);
