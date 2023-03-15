@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
+import { votes } from './client';
 import type { Vote } from './types';
 import { env } from './utils';
 
@@ -14,7 +15,6 @@ type Auth = {
 	access_token: string;
 	role: Role;
 	room_id?: string;
-	votes: string[];
 };
 
 type Token = {
@@ -45,7 +45,7 @@ async function connect(user: string, password: string) {
 	const access_token = (await res.json())['access_token'] as string;
 	storeUserToken(access_token);
 
-	auth.set({ access_token, role: 'Admin', votes: [] });
+	auth.set({ access_token, role: 'Admin' });
 }
 
 async function joinRoom(room_id: string) {
@@ -64,7 +64,7 @@ async function joinRoom(room_id: string) {
 	const token_data = decodeToken(access_token);
 	const role = token_data.role as Role;
 
-	auth.set({ access_token, role, room_id, votes: [] });
+	auth.set({ access_token, role, room_id });
 }
 
 async function tryRecallUser() {
@@ -82,7 +82,7 @@ async function tryRecallUser() {
 	const role = token_data.role as Role;
 
 	if (role === 'Admin') {
-		auth.set({ access_token, role, votes: [] });
+		auth.set({ access_token, role });
 		return true;
 	}
 
@@ -90,14 +90,12 @@ async function tryRecallUser() {
 		const room_id = token_data.room_id as string;
 
 		try {
-			const votes = await getVotes(room_id, access_token);
+			const get_votes = await getVotes(room_id, access_token);
+			const new_votes = new Set(get_votes.filter((v) => v.like).map((v) => v.music_id));
 
-			auth.set({
-				access_token,
-				role,
-				room_id,
-				votes: votes.filter((v) => v.like).map((v) => v.music_id)
-			});
+			votes.set(new_votes);
+			auth.set({ access_token, role, room_id });
+
 			return true;
 		} catch (e) {
 			disconnect();

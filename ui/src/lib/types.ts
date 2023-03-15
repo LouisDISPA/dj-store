@@ -2,7 +2,7 @@ export type Music = {
 	id: string;
 	title: string;
 	artist: string;
-	votes: number;
+	votes?: number;
 };
 
 export type Vote = {

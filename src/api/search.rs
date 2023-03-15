@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -16,8 +16,6 @@ use crate::utils::{
 
 use musicbrainz_rs::entity::recording::Recording;
 use musicbrainz_rs::prelude::*;
-
-use super::state::ApiState;
 
 #[derive(Serialize, Deserialize)]
 pub struct SearchRequest {

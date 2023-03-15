@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use displaydoc::Display;
-use migration::SqliteQueryBuilder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::sleep;
@@ -23,7 +22,7 @@ use sea_orm::{
     prelude::*, DatabaseBackend, FromQueryResult, JoinType, QuerySelect, QueryTrait, Set, Statement,
 };
 
-use sea_orm::sea_query::{Alias, Expr, Query};
+use sea_orm::sea_query::{Alias, Expr, Order, Query, SqliteQueryBuilder};
 
 use crate::utils::room_id::RoomID;
 
@@ -266,6 +265,8 @@ pub async fn get_musics(
             music::Entity,
             Expr::col(vote::Column::MusicId).equals(music::Column::Mbid),
         )
+        .and_having(Expr::col(Alias::new("votes")).gt(0))
+        .order_by(Alias::new("votes"), Order::Desc)
         .build(SqliteQueryBuilder);
 
     return Music::find_by_statement(Statement::from_sql_and_values(

@@ -1,54 +1,36 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { auth } from '$lib/auth';
-	import { getMusics } from '$lib/client';
+	import Button from '$lib/Button.svelte';
+	import { getMusics, getSearch, voteForMusic, votes } from '$lib/client';
 	import Hero from '$lib/Hero.svelte';
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Search from '$lib/Search.svelte';
 	import Table from '$lib/Table.svelte';
 	import type { Music } from '$lib/types';
-	import { env, goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	let musics: Music[] = [];
+	let searched = false;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
 	const room_id = $page.params.room_id as string;
 
-	onMount(async () => {
-		musics = await getMusics(room_id, auth_token);
-	});
+	onMount(pageLoad);
 
-	async function onSearch(search: string) {
-		await goto(`/r/${room_id}/search?query=${search}`);
+	async function pageLoad() {
+		musics = await getMusics(auth_token, room_id);
+		searched = false;
 	}
 
-	async function onVote(like: boolean, id: string) {
-		const response = await fetch(`${env.API_URL}/api/room/${room_id}/vote`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${auth_token}`
-			},
-			body: JSON.stringify({
-				music_id: id,
-				like
-			})
-		});
+	async function onSearch(search: string) {
+		musics = await getSearch(auth_token, room_id, search);
+		searched = true;
+	}
 
-		if (!response.ok) {
-			throw new Error(`Error voting: ${await response.text()}`);
-		}
-		auth.update((auth) => {
-			if (like && auth && !auth.votes.includes(id)) {
-				auth.votes.push(id);
-			}
-			if (!like && auth) {
-				auth.votes = auth.votes.filter((vote) => vote !== id);
-			}
-			return auth;
-		});
+	function onVote(is_voted: boolean, id: string) {
+		voteForMusic(auth_token, room_id, is_voted, id);
 	}
 </script>
 
@@ -56,10 +38,13 @@
 	{#if musics}
 		<div class="flex flex-wrap justify-center items-center">
 			<Search onSubmit={onSearch} />
+			{#if searched}
+				<Button label="Back" onSubmit={pageLoad} />
+			{/if}
 		</div>
 		<Table>
 			{#each musics as music (music.id)}
-				<MusicTile {...music} {onVote} is_voted={$auth?.votes.includes(music.id)} />
+				<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />
 			{/each}
 		</Table>
 	{:else}

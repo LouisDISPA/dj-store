@@ -11,7 +11,7 @@
 	function toogleVote() {
 		onVote?.(!is_voted, id);
 		is_voted = !is_voted;
-		if (votes) {
+		if (votes !== undefined) {
 			votes += is_voted ? 1 : -1;
 		}
 	}
