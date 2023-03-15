@@ -10,6 +10,8 @@
 	let musics = data.musics;
 	const { authToken, roomCode } = data;
 
+	// TODO: make this page work
+
 	onMount(async () => {
 		const api_url = env.API_URL.replace('http', 'ws').replace('://', `://Bearer ${authToken}@`);
 		const socket = new WebSocket(`${api_url}/api/room/${roomCode}/ws`);

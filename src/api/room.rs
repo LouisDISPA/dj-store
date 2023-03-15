@@ -84,7 +84,7 @@ pub async fn join(
         )
         // The filtering assume that the public id is unique
         .filter(room::Column::PublicId.eq(room_id.value()))
-        .filter(room::Column::UserCount.lt(10))
+        .filter(room::Column::UserCount.lt(1000))
         .exec(&state.db)
         .await
         .map_err(|e| {
@@ -139,7 +139,7 @@ impl IntoResponse for VoteError {
 #[derive(Serialize, Deserialize)]
 pub struct VoteBody {
     music_id: Uuid,
-    voted: bool,
+    like: bool,
 }
 
 impl VoteBody {
@@ -148,7 +148,7 @@ impl VoteBody {
             user_token: Set(user_token),
             room_id: Set(room_id),
             music_id: Set(self.music_id),
-            like: Set(self.voted),
+            like: Set(self.like),
             ..Default::default()
         }
     }
@@ -184,7 +184,7 @@ pub async fn vote(
         })?
         .map(|model| model.like);
 
-    if last_vote == Some(vote.voted) {
+    if last_vote == Some(vote.like) {
         return Err(VoteError::AlreadyVoted);
     }
 
@@ -326,4 +326,64 @@ pub async fn get_music_detail(
         Some(music) => Ok(Json(music)),
         None => Err(GetMusicError::MusicNotFound),
     }
+}
+
+#[derive(Serialize, Deserialize, FromQueryResult, Debug)]
+pub struct VotedMusic {
+    music_id: Uuid,
+    title: String,
+    artist: String,
+    vote_date: DateTimeUtc,
+    like: bool,
+}
+
+#[derive(Error, Display, Debug)]
+pub enum GetVotedMusicError {
+    /// User not in room.
+    UserNotInRoom,
+    /// Internal error.
+    InternalError,
+}
+
+impl IntoResponse for GetVotedMusicError {
+    fn into_response(self) -> Response {
+        use GetVotedMusicError::*;
+
+        let status: StatusCode = match self {
+            UserNotInRoom => StatusCode::UNAUTHORIZED,
+            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        (status, self.to_string()).into_response()
+    }
+}
+
+pub async fn get_voted_musics(
+    State(state): State<ApiState>,
+    Path(room_id): Path<RoomID>,
+    user: User,
+) -> Result<Json<Vec<VotedMusic>>, GetVotedMusicError> {
+    if (Role::User { room_id }) != user.role && user.role != Role::Admin {
+        return Err(GetVotedMusicError::UserNotInRoom);
+    }
+
+    vote::Entity::find()
+        .select_only()
+        .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
+        .column(vote::Column::MusicId)
+        .column(vote::Column::Like)
+        .column(music::Column::Title)
+        .column(music::Column::Artist)
+        .filter(vote::Column::UserToken.eq(user.uid))
+        .filter(vote::Column::RoomId.eq(room_id.value()))
+        .group_by(vote::Column::MusicId)
+        .left_join(music::Entity)
+        .into_model()
+        .all(&state.db)
+        .await
+        .map(Json::from)
+        .map_err(|e| {
+            log::error!("Failed to get voted musics: {}", e);
+            GetVotedMusicError::InternalError
+        })
 }

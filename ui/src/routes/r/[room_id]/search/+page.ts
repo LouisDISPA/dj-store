@@ -14,6 +14,8 @@ export type PageData = {
 	roomCode: string;
 };
 
+// TODO: remove this and make the search page work
+
 export const load: PageLoad<PageData> = async ({ params, url }) => {
 	const { code: roomCode } = params;
 

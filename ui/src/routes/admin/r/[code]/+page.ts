@@ -6,7 +6,6 @@ export type Music = {
 	id: number;
 	title: string;
 	artist: string;
-	is_voted: boolean;
 	votes: number;
 };
 
@@ -43,7 +42,7 @@ export const load: PageLoad<PageData> = async ({ params }) => {
 };
 
 async function getMusics(code: string, authToken: string): Promise<Music[]> {
-	const res = await fetch(`${env.API_URL}/api/room/${code}/music/voted`, {
+	const res = await fetch(`${env.API_URL}/api/room/${code}/music/all`, {
 		headers: {
 			Authorization: `Bearer ${authToken}`
 		}
