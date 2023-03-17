@@ -8,6 +8,11 @@
 	function onChange(event: Event) {
 		value = (event.target as HTMLInputElement).value;
 	}
+
+	function onKeypress(event: KeyboardEvent) {
+		onChange(event);
+		if (event.key === 'Enter') onSubmit?.(value);
+	}
 </script>
 
 <div class="form-control">
@@ -22,6 +27,6 @@
 		{placeholder}
 		class="input input-bordered"
 		on:change={onChange}
-		on:keypress={({ key }) => key === 'Enter' && onSubmit?.(value)}
+		on:keypress={onKeypress}
 	/>
 </div>

@@ -12,6 +12,7 @@
 
 	let musics: Music[] = [];
 	let searched = false;
+	let error: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
@@ -25,8 +26,13 @@
 	}
 
 	async function onSearch(search: string) {
-		musics = await getSearch(auth_token, room_id, search);
-		searched = true;
+		try {
+			musics = await getSearch(auth_token, room_id, search);
+			searched = true;
+		} catch (err) {
+			error = 'Search failed (retry later)';
+			setTimeout(() => (error = undefined), 3000);
+		}
 	}
 
 	function onVote(is_voted: boolean, id: string) {
@@ -42,6 +48,14 @@
 				<Button label="Back" onSubmit={pageLoad} />
 			{/if}
 		</div>
+
+		{#if error}
+			<div class="flex flex-wrap justify-center items-center">
+				<div class="badge badge-error gap-2">
+					{error}
+				</div>
+			</div>
+		{/if}
 		<Table>
 			{#each musics as music (music.id)}
 				<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />

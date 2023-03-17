@@ -30,6 +30,7 @@ uuid = { version = "1", features = ["v4", "fast-rng", "serde"] }
 entity = { path = "entity" }
 migration = { path = "migration" }
 musicbrainz_rs = { version = "0.5.0", features = ["rustls"] }
+serde_json = "1.0.94"
 
 [features]
 default = ["embed-ui"]

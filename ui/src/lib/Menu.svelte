@@ -13,17 +13,23 @@
 		goto('/login');
 	}
 
-	$: menuItems = [
-		{ label: 'Home', action: goToPage('/') },
-		{ label: 'About', action: goToPage('/about') },
-		$auth?.role === 'Admin'
-			? { label: 'Admin', action: goToPage('/admin') }
-			: { label: 'Login', action: goToPage('/login') }
+	const menu_logged = [
+		{ label: 'Admin', action: goToPage('/admin') },
+		{ label: 'Logout', action: logout }
 	];
+
+	const menu_not_logged = [{ label: 'Login', action: goToPage('/login') }];
+
+	const menu_basic = [
+		{ label: 'Home', action: goToPage('/') },
+		{ label: 'About', action: goToPage('/about') }
+	];
+
+	$: menu_items = menu_basic.concat($auth?.role === 'Admin' ? menu_logged : menu_not_logged);
 </script>
 
 <ul class={'menu ' + (direction === 'horizontal' ? 'menu-horizontal' : '')}>
-	{#each menuItems as item}
+	{#each menu_items as item}
 		<li>
 			<button
 				class="btn btn-link normal-case text-lg no-animation no-underline"

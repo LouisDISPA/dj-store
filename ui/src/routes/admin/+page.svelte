@@ -8,8 +8,9 @@
 	import { createRoom, deleteRoom, getRooms } from '$lib/client';
 	import { auth } from '$lib/auth';
 	import { onMount } from 'svelte';
+	import Hero from '$lib/Hero.svelte';
 
-	let rooms: Room[] = [];
+	let rooms: Room[] | undefined;
 	let roomUrl: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
@@ -25,7 +26,7 @@
 
 	async function onDelete(id: string) {
 		await deleteRoom(auth_token, id);
-		rooms = rooms.filter((room) => room.id !== id);
+		rooms = rooms?.filter((room) => room.id !== id);
 	}
 
 	function onShare(id: string) {
@@ -38,18 +39,24 @@
 
 	async function onCreate() {
 		const room = await createRoom(auth_token, randomRoomID(), nowPlus({ days: 1 }));
-		rooms.push(room);
+		rooms?.push(room);
 		rooms = rooms;
 	}
 </script>
 
 <div class="grid-cols-1">
-	<Table {header}>
-		{#each rooms as room}
-			<RoomTile {...room} {onDelete} {onShare} />
-		{/each}
-	</Table>
-	<Button label="Create Room" type="primary" onSubmit={onCreate} />
+	{#if rooms !== undefined}
+		<Table {header}>
+			{#each rooms as room}
+				<RoomTile {...room} {onDelete} {onShare} />
+			{/each}
+		</Table>
+		<Button label="Create Room" type="primary" onSubmit={onCreate} />
+	{:else}
+		<Hero>
+			<h1 class="text-5xl font-bold">Loading...</h1>
+		</Hero>
+	{/if}
 	{#if roomUrl}
 		<QrCodePopup url={roomUrl} onClose={closeShare} />
 	{/if}

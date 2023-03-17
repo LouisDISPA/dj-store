@@ -11,7 +11,7 @@ use self::state::ApiState;
 mod admin;
 mod room;
 mod search;
-// mod websocket;
+mod websocket;
 
 mod state;
 
@@ -31,7 +31,7 @@ pub fn router(db: DatabaseConnection) -> Router {
         .route("/room/:room/vote", post(room::vote))
         .route("/room/:room/search", get(search::search))
         // .route("/api/room/:room/artist", get(search::get_artist))
-        // .route("/room/:room/ws", get(websocket::handle_request))
+        .route("/room/:room/ws", get(websocket::handle_request))
         .with_state(state)
         .fallback(api_fallback)
 }

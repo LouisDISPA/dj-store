@@ -6,7 +6,7 @@ use std::{
 use thiserror::Error;
 
 /// The room identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RoomID {
     value: u32,
 }

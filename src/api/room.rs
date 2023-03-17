@@ -26,7 +26,7 @@ use sea_orm::sea_query::{Alias, Expr, Order, Query, SqliteQueryBuilder};
 
 use crate::utils::room_id::RoomID;
 
-use super::state::ApiState;
+use super::{state::ApiState, websocket::VoteEvent};
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JoinError {
@@ -195,7 +195,21 @@ pub async fn vote(
             VoteError::InternalError
         })?;
 
-    // TODO: send channel update
+    let rooms = state.rooms_channels.read().map_err(|e| {
+        log::error!("Failed to get read lock on rooms: {}", e);
+        VoteError::InternalError
+    })?;
+
+    if let Some(room) = rooms.get(&room_id) {
+        room.send(VoteEvent {
+            music_id: music.mbid,
+            like: vote.like,
+        })
+        .map_err(|e| {
+            log::error!("Failed to send vote to room: {}", e);
+            VoteError::InternalError
+        })?;
+    }
 
     Ok(())
 }

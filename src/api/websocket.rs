@@ -3,22 +3,30 @@ use std::time::Duration;
 use axum::{
     extract::{
         ws::{CloseFrame, Message, WebSocket},
-        Path, WebSocketUpgrade,
+        Path, State, WebSocketUpgrade,
     },
+    http::StatusCode,
     response::Response,
     Error,
 };
-use deku::DekuContainerWrite;
+// use deku::{DekuContainerWrite, DekuUpdate, DekuWrite};
+use serde::Serialize;
 use tokio::{select, sync::broadcast::Receiver, time::timeout};
+use uuid::Uuid;
 
-use crate::{
-    model::{Role, VoteEvent, ROOMS},
-    utils::jwt,
-};
+use crate::utils::jwt::{self, Role};
+use crate::utils::room_id::RoomID;
 
-use super::room_id::RoomID;
+use super::state::ApiState;
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct VoteEvent {
+    pub music_id: Uuid,
+    pub like: bool,
+}
 
 pub async fn handle_request(
+    State(state): State<ApiState>,
     ws: WebSocketUpgrade,
     // Waiting to see if custom headers will be supported
     // on the WebSocket protocol
@@ -26,13 +34,20 @@ pub async fn handle_request(
     //
     // user: User,
     Path(room_id): Path<RoomID>,
-) -> Response {
-    let rooms = ROOMS.read().unwrap();
-    let room = rooms.iter().find(|r| r.id == room_id).unwrap();
-    let receiver = room.channel.subscribe();
+) -> Result<Response, (StatusCode, String)> {
+    let mut rooms = state
+        .rooms_channels
+        .write()
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+
+    let room = rooms.entry(room_id).or_insert_with(|| {
+        let (sender, _) = tokio::sync::broadcast::channel(100);
+        sender
+    });
+    let receiver = room.subscribe();
     drop(rooms);
 
-    ws.on_upgrade(move |socket| handle_room_websocket(socket, receiver))
+    Ok(ws.on_upgrade(move |socket| handle_room_websocket(socket, receiver)))
 }
 
 async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receiver<VoteEvent>) {
@@ -70,8 +85,8 @@ async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receive
                 }
             }
             Ok(vote) = room_receiver.recv() => {
-                let encoded = vote.to_bytes().unwrap();
-                if let Err(e) = socket.send(Message::Binary(encoded)).await {
+                let encoded = serde_json::to_string(&vote).unwrap();
+                if let Err(e) = socket.send(Message::Text(encoded)).await {
                     log::error!("Error sending vote: {}", e);
                     break;
                 }
