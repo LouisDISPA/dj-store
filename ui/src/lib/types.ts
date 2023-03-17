@@ -12,3 +12,11 @@ export type Vote = {
 	vote_date: Date;
 	like: boolean;
 };
+
+export type Room = {
+	id: string;
+	creation: Date;
+	expiration: Date;
+	user_count: number;
+	active: boolean;
+};

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
-import type { Music } from './types';
-import { env } from './utils';
+import type { Music, Room } from './types';
+import { convertApiRoom, env } from './utils';
 
 const votes: Writable<Set<string>> = writable(new Set());
 
@@ -12,7 +12,6 @@ async function getMusics(auth_token: string, room_id: string): Promise<Music[]> 
 		}
 	});
 	if (!res.ok) {
-		localStorage.removeItem('authToken');
 		const message = res.statusText;
 		const detail = await res.text();
 		throw error(res.status, { message, detail });
@@ -62,4 +61,61 @@ async function voteForMusic(auth_token: string, room_id: string, like: boolean, 
 	});
 }
 
-export { getMusics, getSearch, voteForMusic, votes };
+async function getRooms(auth_token: string): Promise<Room[]> {
+	const res = await fetch(`${env.API_URL}/api/room/all`, {
+		headers: {
+			Authorization: `Bearer ${auth_token}`
+		}
+	});
+
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
+		throw error(res.status, { message, detail });
+	}
+
+	const rooms = await res.json();
+
+	return rooms.map(convertApiRoom);
+}
+
+async function deleteRoom(auth_token: string, id: string) {
+	const res = await fetch(`${env.API_URL}/api/room/${id}`, {
+		method: 'DELETE',
+		headers: {
+			Authorization: `Bearer ${auth_token}`
+		}
+	});
+
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
+		throw error(res.status, { message, detail });
+	}
+}
+
+async function createRoom(auth_token: string, id: string, expiration: Date): Promise<Room> {
+	const body = JSON.stringify({
+		id,
+		expiration: expiration.toISOString()
+	});
+
+	const res = await fetch(`${env.API_URL}/api/room`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${auth_token}`,
+			'Content-Type': 'application/json'
+		},
+		body
+	});
+
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
+		throw error(res.status, { message, detail });
+	}
+
+	return await res.json().then(convertApiRoom);
+}
+
+export { getMusics, getSearch, voteForMusic, getRooms, deleteRoom, createRoom, votes };

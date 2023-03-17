@@ -3,83 +3,53 @@
 	import RoomTile from '$lib/RoomTile.svelte';
 	import Table from '$lib/Table.svelte';
 	import QrCodePopup from '$lib/QrCodePopup.svelte';
-	import { env } from '$lib/utils';
-	import type { PageData } from './$types';
-	import { convertApiRoom } from './+page';
+	import { env, nowPlus, randomRoomID } from '$lib/utils';
+	import type { Room } from '$lib/types';
+	import { createRoom, deleteRoom, getRooms } from '$lib/client';
+	import { auth } from '$lib/auth';
+	import { onMount } from 'svelte';
 
-	export let data: PageData;
-	const authToken = data.authToken;
+	let rooms: Room[] = [];
+	let roomUrl: string | undefined;
 
-	function randomID(): string {
-		let result = '';
-		const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		for (var i = 0; i < 6; i++) {
-			result += characters.charAt(Math.floor(Math.random() * characters.length));
-		}
-		return result;
-	}
-
-	let rooms = data.rooms;
+	// Since the authentification is done in the layout, we can assume that the user is authenticated
+	const auth_token = $auth?.access_token as string;
 
 	const header = ['ID', 'Users', 'Expires', 'Created', 'Actions'];
 
-	async function deleteRoom(id: string) {
-		const res = await fetch(`${env.API_URL}/api/room/${id}`, {
-			method: 'DELETE',
-			headers: {
-				Authorization: `Bearer ${authToken}`
-			}
-		});
-		if (res.ok) {
-			rooms = rooms.filter((room) => room.id !== id);
-		} else {
-			alert(`Failed to delete room: ${await res.text()}`);
-		}
+	onMount(pageLoad);
+
+	async function pageLoad() {
+		rooms = await getRooms(auth_token);
 	}
 
-	async function createRoom() {
-		const expiration = new Date();
-		expiration.setHours(expiration.getHours() + 24);
-
-		const body = JSON.stringify({
-			id: randomID(),
-			expiration: expiration.toISOString()
-		});
-
-		const res = await fetch(`${env.API_URL}/api/room`, {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${authToken}`,
-				'Content-Type': 'application/json'
-			},
-			body
-		});
-		if (res.ok) {
-			const apiRoom = await res.json();
-			const room = convertApiRoom(apiRoom);
-			rooms.push(room);
-			rooms = rooms;
-		} else {
-			alert(`Failed to create room: ${await res.text()}`);
-		}
+	async function onDelete(id: string) {
+		await deleteRoom(auth_token, id);
+		rooms = rooms.filter((room) => room.id !== id);
 	}
 
-	let roomUrl: string | undefined;
-	function shareRoom(id: string) {
+	function onShare(id: string) {
 		roomUrl = window.location.origin + `${env.BASE_HREF}/r/${id}`;
 	}
+
 	function closeShare() {
 		roomUrl = undefined;
+	}
+
+	async function onCreate() {
+		const room = await createRoom(auth_token, randomRoomID(), nowPlus({ days: 1 }));
+		rooms.push(room);
+		rooms = rooms;
 	}
 </script>
 
 <div class="grid-cols-1">
 	<Table {header}>
 		{#each rooms as room}
-			<RoomTile {...room} onDelete={() => deleteRoom(room.id)} onShare={() => shareRoom(room.id)} />
+			<RoomTile {...room} {onDelete} {onShare} />
 		{/each}
 	</Table>
-	<Button label="Create Room" type="primary" onSubmit={createRoom} />
+	<Button label="Create Room" type="primary" onSubmit={onCreate} />
 	{#if roomUrl}
 		<QrCodePopup url={roomUrl} onClose={closeShare} />
 	{/if}

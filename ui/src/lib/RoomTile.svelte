@@ -8,8 +8,8 @@
 	export let creation: Date;
 	export let active: boolean;
 
-	export let onDelete: (() => void) | undefined = undefined;
-	export let onShare: (() => void) | undefined = undefined;
+	export let onDelete: ((id: string) => void) | undefined = undefined;
+	export let onShare: ((id: string) => void) | undefined = undefined;
 
 	const timeFormat = new Intl.DateTimeFormat(undefined, {
 		year: 'numeric',
@@ -35,7 +35,7 @@
 	</td>
 	<td>
 		<Button label="GoTo" type="primary" onSubmit={() => goto(`admin/r/${id}`)} />
-		<Button label="Share" type="primary" onSubmit={onShare} />
-		<Button label="Delete" type="error" onSubmit={onDelete} />
+		<Button label="Share" type="primary" onSubmit={() => onShare?.(id)} />
+		<Button label="Delete" type="error" onSubmit={() => onDelete?.(id)} />
 	</td>
 </tr>

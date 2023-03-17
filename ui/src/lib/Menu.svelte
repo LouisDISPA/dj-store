@@ -1,11 +1,24 @@
 <script lang="ts">
 	import { goto } from '$lib/utils';
+	import { auth, disconnect } from '$lib/auth';
+
 	export let direction: 'horizontal' | 'vertical';
 
-	let menuItems = [
-		{ label: 'Home', href: '/' },
-		{ label: 'About', href: '/about' },
-		{ label: 'Login', href: '/login' }
+	function goToPage(href: string): () => void {
+		return () => goto(href);
+	}
+
+	function logout(): void {
+		disconnect();
+		goto('/login');
+	}
+
+	$: menuItems = [
+		{ label: 'Home', action: goToPage('/') },
+		{ label: 'About', action: goToPage('/about') },
+		$auth?.role === 'Admin'
+			? { label: 'Admin', action: goToPage('/admin') }
+			: { label: 'Login', action: goToPage('/login') }
 	];
 </script>
 
@@ -14,7 +27,7 @@
 		<li>
 			<button
 				class="btn btn-link normal-case text-lg no-animation no-underline"
-				on:click={() => goto(item.href)}>{item.label}</button
+				on:click={item.action}>{item.label}</button
 			>
 		</li>
 	{/each}

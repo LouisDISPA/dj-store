@@ -16,11 +16,12 @@
 			<span class="label-text">{label}</span>
 		</div>
 	{/if}
+
 	<input
 		{type}
 		{placeholder}
 		class="input input-bordered"
 		on:change={onChange}
-		on:submit|preventDefault={() => onSubmit?.(value)}
+		on:keypress={({ key }) => key === 'Enter' && onSubmit?.(value)}
 	/>
 </div>

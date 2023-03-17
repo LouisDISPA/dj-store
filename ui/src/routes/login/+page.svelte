@@ -1,30 +1,28 @@
-<script>
+<script lang="ts">
+	import { auth, connect } from '$lib/auth';
 	import Button from '$lib/Button.svelte';
 	import TextInput from '$lib/TextInput.svelte';
-	import { env, goto } from '$lib/utils';
+	import { goto } from '$lib/utils';
+	import { onMount } from 'svelte';
 
 	let username = '';
 	let password = '';
+	let error: string | null = null;
 
-	async function login() {
-		const response = await fetch(`${env.API_URL}/api/admin/login`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				username: username,
-				password: password
-			})
-		});
-		if (!response.ok) {
-			alert(`Login failed: ${await response.text()}`);
+	onMount(() => {
+		if ($auth?.role === 'Admin') {
+			goto('/admin');
 			return;
 		}
-		const data = await response.json();
-		const authToken = data['access_token'];
-		localStorage.setItem('authToken', authToken);
-		goto('/admin');
+	});
+
+	function onSubmit() {
+		connect(username, password)
+			.then(() => goto('/admin'))
+			.catch(() => {
+				error = 'Invalid username or password';
+				setTimeout(() => (error = null), 3000);
+			});
 	}
 </script>
 
@@ -34,9 +32,12 @@
 			<h1 class="text-2xl font-bold">Login to your account</h1>
 		</div>
 		<TextInput label="Username" bind:value={username} />
-		<TextInput label="Password" bind:value={password} type="password" onSubmit={() => login()} />
+		<TextInput label="Password" bind:value={password} type="password" {onSubmit} />
 		<div class="mt-5">
-			<Button label="Connect" type="primary" onSubmit={() => login()} />
+			<Button label="Connect" type="primary" {onSubmit} />
 		</div>
+		{#if error}
+			<div class="badge badge-error gap-2">{error}</div>
+		{/if}
 	</div>
 </div>

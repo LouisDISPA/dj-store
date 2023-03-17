@@ -27,13 +27,14 @@ type Token = {
 
 const TOKEN_STORAGE_KEY = 'access_token';
 
-async function connect(user: string, password: string) {
+async function connect(username: string, password: string) {
+	disconnect();
 	const res = await fetch(`${env.API_URL}/api/admin/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ user, password })
+		body: JSON.stringify({ username, password })
 	});
 
 	if (!res.ok) {

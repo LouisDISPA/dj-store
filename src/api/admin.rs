@@ -221,7 +221,8 @@ pub async fn delete_room(
         return Err(DeleteRoomsError::Unauthorized);
     }
 
-    let rows_affected = room::Entity::delete_by_id(room_id.value())
+    let rows_affected = room::Entity::delete_many()
+        .filter(room::Column::PublicId.eq(room_id.value()))
         .exec(&state.db)
         .await
         .map_err(|e| {
@@ -230,9 +231,12 @@ pub async fn delete_room(
         })?
         .rows_affected;
 
-    if rows_affected == 0 {
-        return Err(DeleteRoomsError::RoomIdDoesNotExist);
+    match rows_affected {
+        1 => Ok(()),
+        0 => Err(DeleteRoomsError::RoomIdDoesNotExist),
+        _ => {
+            log::error!("Failed to delete room: deleted {} rows", rows_affected);
+            Err(DeleteRoomsError::InternalError)
+        }
     }
-
-    Ok(())
 }
