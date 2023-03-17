@@ -2,6 +2,7 @@ use std::env;
 
 use axum::Router;
 use log::info;
+use migration::MigratorTrait;
 use sea_orm::Database;
 
 mod api;
@@ -23,6 +24,10 @@ async fn main() {
     let db = Database::connect(db_adress)
         .await
         .expect("Failed to connect to database");
+
+    migration::Migrator::up(&db, None)
+        .await
+        .expect("Failed to migrate database");
 
     let api = api::router(db);
 

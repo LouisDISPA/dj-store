@@ -268,7 +268,7 @@ pub async fn get_musics(
         .group_by(vote::Column::MusicId)
         .into_query();
 
-    let (sql, values) = Query::select()
+    let statement = Query::select()
         .columns([music::Column::Title, music::Column::Artist])
         .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
@@ -281,20 +281,18 @@ pub async fn get_musics(
         )
         .and_having(Expr::col(Alias::new("votes")).gt(0))
         .order_by(Alias::new("votes"), Order::Desc)
-        .build(SqliteQueryBuilder);
+        .take();
 
-    return Music::find_by_statement(Statement::from_sql_and_values(
-        DatabaseBackend::Sqlite,
-        &sql,
-        values,
-    ))
-    .all(&state.db)
-    .await
-    .map(Json::from)
-    .map_err(|e| {
-        log::error!("Failed to get musics: {}", e);
-        GetMusicError::InternalError
-    });
+    let backend = state.db.get_database_backend();
+
+    return Music::find_by_statement(backend.build(&statement))
+        .all(&state.db)
+        .await
+        .map(Json::from)
+        .map_err(|e| {
+            log::error!("Failed to get musics: {}", e);
+            GetMusicError::InternalError
+        });
 }
 
 pub async fn get_music_detail(
@@ -316,26 +314,24 @@ pub async fn get_music_detail(
         .group_by(vote::Column::UserToken)
         .into_query();
 
-    let (sql, values) = Query::select()
+    let statement = Query::select()
         .columns([music::Column::Title, music::Column::Artist])
         .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .from_subquery(all_votes, vote::Entity)
         .from(music::Entity)
         .and_where(music::Column::Mbid.eq(music_id))
-        .build(SqliteQueryBuilder);
+        .take();
 
-    let music = Music::find_by_statement(Statement::from_sql_and_values(
-        DatabaseBackend::Sqlite,
-        &sql,
-        values,
-    ))
-    .one(&state.db)
-    .await
-    .map_err(|e| {
-        log::error!("Failed to get musics: {}", e);
-        GetMusicError::InternalError
-    })?;
+    let backend = state.db.get_database_backend();
+
+    let music = Music::find_by_statement(backend.build(&statement))
+        .one(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to get musics: {}", e);
+            GetMusicError::InternalError
+        })?;
 
     match music {
         Some(music) => Ok(Json(music)),
