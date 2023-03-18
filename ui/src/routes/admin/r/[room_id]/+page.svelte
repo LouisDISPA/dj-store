@@ -8,8 +8,9 @@
 	import { auth } from '$lib/auth';
 	import { page } from '$app/stores';
 	import { getMusics } from '$lib/client';
+	import Spinner from '$lib/Spinner.svelte';
 
-	let musics: Music[] = [];
+	let musics: Music[] | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
@@ -18,13 +19,19 @@
 	onMount(async () => {
 		musics = await getMusics(auth_token, room_id);
 
+		if (musics === undefined) {
+			alert('You are not allowed to access this room.');
+			await goto('/admin');
+			return;
+		}
+
 		const api_url = env.API_URL.replace('http', 'ws');
 		const socket = new WebSocket(`${api_url}/api/room/${room_id}/ws`);
 
 		socket.onmessage = async (event) => {
 			const { music_id, like } = JSON.parse(event.data);
 
-			const music = musics.find((music) => music.id === music_id);
+			const music = musics?.find((music) => music.id === music_id);
 			if (!music) {
 				const new_music: Music = await fetch(
 					`${env.API_URL}/api/room/${room_id}/music/${music_id}`,
@@ -35,12 +42,12 @@
 						}
 					}
 				).then((res) => res.json());
-				musics.push(new_music);
+				musics?.push(new_music);
 			} else {
 				music.votes += like ? 1 : -1;
 			}
 
-			musics.sort((a, b) => b.votes - a.votes);
+			musics?.sort((a, b) => b.votes - a.votes);
 			musics = musics;
 		};
 
@@ -65,15 +72,19 @@
 </script>
 
 <div class="grid-cols-1">
-	{#if musics}
+	{#if musics === undefined}
+		<Hero>
+			<Spinner />
+		</Hero>
+	{:else if musics.length === 0}
+		<Hero>
+			<h1 class="text-3xl font-bold">No music voted yet</h1>
+		</Hero>
+	{:else}
 		<Table>
 			{#each musics as music (music.id)}
 				<MusicTile {...music} />
 			{/each}
 		</Table>
-	{:else}
-		<Hero>
-			<h1 class="text-5xl font-bold">Loading...</h1>
-		</Hero>
 	{/if}
 </div>

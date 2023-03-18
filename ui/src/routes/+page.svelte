@@ -5,10 +5,18 @@
 	import { onMount } from 'svelte';
 	import { auth, disconnect, joinRoom } from '$lib/auth';
 	import Hero from '$lib/Hero.svelte';
+	import { page } from '$app/stores';
 
 	let input = '';
 	let loading = false;
-	let error: string | null = null;
+	let error: string | null = $page.url.searchParams.get('error');
+
+	if (error) {
+		setTimeout(() => {
+			error = null;
+		}, 3000);
+		goto('/');
+	}
 
 	async function goToPage() {
 		if (input.length !== 6) {

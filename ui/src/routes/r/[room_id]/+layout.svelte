@@ -5,7 +5,7 @@
 	import Spinner from '$lib/Spinner.svelte';
 </script>
 
-{#if !$auth && $page.params.room_id}
+{#if !$auth && $page.params.room_id && !$page.error}
 	<Hero>
 		<Spinner />
 	</Hero>

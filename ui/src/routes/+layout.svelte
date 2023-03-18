@@ -5,11 +5,12 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/auth';
+	import { goto } from '$lib/utils';
 
 	onMount(async () => {
 		const reccaled = await tryRecallUser();
 
-		if ($page.routeId?.includes('admin')) {
+		if ($page.route.id?.includes('admin')) {
 			return;
 		}
 
@@ -22,7 +23,10 @@
 				$page.params.room_id &&
 				$page.params.room_id !== $auth?.room_id)
 		) {
-			await joinRoom($page.params.room_id);
+			joinRoom($page.params.room_id).catch((err) => {
+				console.error(err);
+				goto('/?error=Could not connect to room');
+			});
 		}
 	});
 </script>
