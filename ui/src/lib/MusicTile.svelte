@@ -1,12 +1,14 @@
 <script lang="ts">
-	export let id: string;
+	import type { MusicId } from './types';
+
+	export let id: MusicId;
 	export let title: string;
 	export let artist: string;
 	export let is_voted = false;
 	export let votes: number | undefined = undefined;
 	export let onVote: OnVote | undefined = undefined;
 
-	type OnVote = (is_voted: boolean, id: string) => void;
+	type OnVote = (is_voted: boolean, id: MusicId) => void;
 
 	function toogleVote() {
 		onVote?.(!is_voted, id);

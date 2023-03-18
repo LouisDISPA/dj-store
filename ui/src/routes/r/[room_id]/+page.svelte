@@ -7,7 +7,7 @@
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Search from '$lib/Search.svelte';
 	import Table from '$lib/Table.svelte';
-	import type { Music } from '$lib/types';
+	import type { Music, MusicId } from '$lib/types';
 	import { onMount } from 'svelte';
 
 	let musics: Music[] = [];
@@ -35,7 +35,7 @@
 		}
 	}
 
-	function onVote(is_voted: boolean, id: string) {
+	function onVote(is_voted: boolean, id: MusicId) {
 		voteForMusic(auth_token, room_id, is_voted, id);
 	}
 </script>

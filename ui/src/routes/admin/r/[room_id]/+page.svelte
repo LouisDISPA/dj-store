@@ -35,7 +35,7 @@
 						}
 					}
 				).then((res) => res.json());
-				new_music.votes = 1;
+				new_music.votes ??= 1;
 				musics.push(new_music);
 			} else {
 				music.votes! += like ? 1 : -1;

@@ -1,15 +1,16 @@
 <script lang="ts">
 	import Button from './Button.svelte';
+	import type { RoomId } from './types';
 	import { goto } from './utils';
 
-	export let id: string;
+	export let id: RoomId;
 	export let user_count: number;
 	export let expiration: Date;
 	export let creation: Date;
 	export let active: boolean;
 
-	export let onDelete: ((id: string) => void) | undefined = undefined;
-	export let onShare: ((id: string) => void) | undefined = undefined;
+	export let onDelete: ((id: RoomId) => void) | undefined = undefined;
+	export let onShare: ((id: RoomId) => void) | undefined = undefined;
 
 	const timeFormat = new Intl.DateTimeFormat(undefined, {
 		year: 'numeric',

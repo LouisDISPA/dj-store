@@ -1,11 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
-import type { Music, Room } from './types';
+import type { Music, MusicId, Room, RoomId } from './types';
 import { convertApiRoom, env } from './utils';
 
-const votes: Writable<Set<string>> = writable(new Set());
+const voted_for: Writable<Set<MusicId>> = writable(new Set());
 
-async function getMusics(auth_token: string, room_id: string): Promise<Music[]> {
+async function getMusics(auth_token: string, room_id: RoomId): Promise<Music[]> {
 	const res = await fetch(`${env.API_URL}/api/room/${room_id}/music/all`, {
 		headers: {
 			Authorization: `Bearer ${auth_token}`
@@ -20,7 +20,7 @@ async function getMusics(auth_token: string, room_id: string): Promise<Music[]> 
 	return await res.json();
 }
 
-async function getSearch(auth_token: string, rooom_id: string, query: string): Promise<Music[]> {
+async function getSearch(auth_token: string, rooom_id: RoomId, query: string): Promise<Music[]> {
 	const res = await fetch(`${env.API_URL}/api/room/${rooom_id}/search?query=${query}`, {
 		headers: {
 			Authorization: `Bearer ${auth_token}`
@@ -35,7 +35,7 @@ async function getSearch(auth_token: string, rooom_id: string, query: string): P
 	return await res.json();
 }
 
-async function voteForMusic(auth_token: string, room_id: string, like: boolean, id: string) {
+async function voteForMusic(auth_token: string, room_id: RoomId, like: boolean, music_id: MusicId) {
 	const response = await fetch(`${env.API_URL}/api/room/${room_id}/vote`, {
 		method: 'POST',
 		headers: {
@@ -43,7 +43,7 @@ async function voteForMusic(auth_token: string, room_id: string, like: boolean, 
 			Authorization: `Bearer ${auth_token}`
 		},
 		body: JSON.stringify({
-			music_id: id,
+			music_id,
 			like
 		})
 	});
@@ -51,11 +51,11 @@ async function voteForMusic(auth_token: string, room_id: string, like: boolean, 
 	if (!response.ok) {
 		throw new Error(`Error voting: ${await response.text()}`);
 	}
-	votes.update((set) => {
+	voted_for.update((set) => {
 		if (like) {
-			set.add(id);
+			set.add(music_id);
 		} else {
-			set.delete(id);
+			set.delete(music_id);
 		}
 		return set;
 	});
@@ -79,8 +79,8 @@ async function getRooms(auth_token: string): Promise<Room[]> {
 	return rooms.map(convertApiRoom);
 }
 
-async function deleteRoom(auth_token: string, id: string) {
-	const res = await fetch(`${env.API_URL}/api/room/${id}`, {
+async function deleteRoom(auth_token: string, room_id: RoomId) {
+	const res = await fetch(`${env.API_URL}/api/room/${room_id}`, {
 		method: 'DELETE',
 		headers: {
 			Authorization: `Bearer ${auth_token}`
@@ -94,9 +94,9 @@ async function deleteRoom(auth_token: string, id: string) {
 	}
 }
 
-async function createRoom(auth_token: string, id: string, expiration: Date): Promise<Room> {
+async function createRoom(auth_token: string, room_id: RoomId, expiration: Date): Promise<Room> {
 	const body = JSON.stringify({
-		id,
+		id: room_id,
 		expiration: expiration.toISOString()
 	});
 
@@ -118,4 +118,4 @@ async function createRoom(auth_token: string, id: string, expiration: Date): Pro
 	return await res.json().then(convertApiRoom);
 }
 
-export { getMusics, getSearch, voteForMusic, getRooms, deleteRoom, createRoom, votes };
+export { getMusics, getSearch, voteForMusic, getRooms, deleteRoom, createRoom, voted_for as votes };

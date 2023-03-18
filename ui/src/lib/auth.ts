@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
 import { votes } from './client';
-import type { Vote } from './types';
+import type { RoomId, Vote } from './types';
 import { env } from './utils';
 
 const auth: Writable<Auth | undefined> = writable();
@@ -14,12 +14,12 @@ type Role = 'Admin' | 'User';
 type Auth = {
 	access_token: string;
 	role: Role;
-	room_id?: string;
+	room_id?: RoomId;
 };
 
 type Token = {
 	role: Role;
-	room_id?: string;
+	room_id?: RoomId;
 	iat: number;
 	exp: number;
 	uuid: string;
@@ -49,7 +49,7 @@ async function connect(username: string, password: string) {
 	auth.set({ access_token, role: 'Admin' });
 }
 
-async function joinRoom(room_id: string) {
+async function joinRoom(room_id: RoomId) {
 	disconnect();
 	const res = await fetch(`${env.API_URL}/api/room/${room_id}/join`);
 
@@ -108,7 +108,7 @@ async function tryRecallUser() {
 	return false;
 }
 
-async function getVotes(room_id: string, access_token: string): Promise<Vote[]> {
+async function getVotes(room_id: RoomId, access_token: string): Promise<Vote[]> {
 	const res = await fetch(`${env.API_URL}/api/room/${room_id}/music/voted`, {
 		headers: {
 			Authorization: `Bearer ${access_token}`

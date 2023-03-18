@@ -1,12 +1,15 @@
+export type MusicId = string;
+export type RoomId = string;
+
 export type Music = {
-	id: string;
+	id: MusicId;
 	title: string;
 	artist: string;
 	votes?: number;
 };
 
 export type Vote = {
-	music_id: string;
+	music_id: MusicId;
 	title: string;
 	artist: string;
 	vote_date: Date;
@@ -14,7 +17,7 @@ export type Vote = {
 };
 
 export type Room = {
-	id: string;
+	id: RoomId;
 	creation: Date;
 	expiration: Date;
 	user_count: number;

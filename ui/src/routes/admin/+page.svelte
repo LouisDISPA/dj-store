@@ -4,7 +4,7 @@
 	import Table from '$lib/Table.svelte';
 	import QrCodePopup from '$lib/QrCodePopup.svelte';
 	import { env, nowPlus, randomRoomID } from '$lib/utils';
-	import type { Room } from '$lib/types';
+	import type { Room, RoomId } from '$lib/types';
 	import { createRoom, deleteRoom, getRooms } from '$lib/client';
 	import { auth } from '$lib/auth';
 	import { onMount } from 'svelte';
@@ -24,12 +24,12 @@
 		rooms = await getRooms(auth_token);
 	}
 
-	async function onDelete(id: string) {
+	async function onDelete(id: RoomId) {
 		await deleteRoom(auth_token, id);
 		rooms = rooms?.filter((room) => room.id !== id);
 	}
 
-	function onShare(id: string) {
+	function onShare(id: RoomId) {
 		roomUrl = window.location.origin + `${env.BASE_HREF}/r/${id}`;
 	}
 
