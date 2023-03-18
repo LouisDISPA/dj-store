@@ -3,7 +3,7 @@
 </script>
 
 <div class="my-2">
-	<table class="table table-zebra m-auto w-full">
+	<table class="table table-zebra m-auto shadow-lg table-compact md:table-normal">
 		{#if header}
 			<thead>
 				<tr>

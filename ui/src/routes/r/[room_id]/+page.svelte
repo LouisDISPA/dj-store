@@ -6,31 +6,30 @@
 	import Hero from '$lib/Hero.svelte';
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Search from '$lib/Search.svelte';
+	import Spinner from '$lib/Spinner.svelte';
 	import Table from '$lib/Table.svelte';
 	import type { Music, MusicId } from '$lib/types';
 	import { onMount } from 'svelte';
 
-	let musics: Music[] = [];
-	let searched = false;
+	let musics: Music[] | undefined;
+	let searched: string | undefined;
 	let error: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
 	const room_id = $page.params.room_id as string;
 
-	onMount(pageLoad);
+	onMount(loadMusic);
 
-	async function pageLoad() {
+	async function loadMusic() {
 		musics = await getMusics(auth_token, room_id);
-		console.log(musics);
-		searched = false;
+		searched = undefined;
 	}
 
 	async function onSearch(search: string) {
 		try {
 			musics = await getSearch(auth_token, room_id, search);
-			console.log(musics);
-			searched = true;
+			searched = search;
 		} catch (err) {
 			error = 'Search failed (retry later)';
 			setTimeout(() => (error = undefined), 3000);
@@ -44,20 +43,37 @@
 
 <div class="grid-cols-1">
 	{#if musics}
-		<div class="flex flex-wrap justify-center items-center">
+		<div class="flex flex-wrap justify-center w-full items-center">
 			<Search onSubmit={onSearch} />
 			{#if searched}
-				<Button label="Back" onSubmit={pageLoad} />
+				<Button label="Back" onSubmit={loadMusic} no_marging />
 			{/if}
 		</div>
 
 		{#if error}
 			<div class="flex flex-wrap justify-center items-center">
-				<div class="badge badge-error gap-2">
+				<div class="badge badge-error">
 					{error}
 				</div>
 			</div>
 		{/if}
+
+		<div class="flex flex-wrap justify-center items-center">
+			<div class="badge badge-lg">
+				{#if searched}
+					Search results for '{searched}'
+				{:else}
+					Most voted
+				{/if}
+			</div>
+		</div>
+
+		{#if musics.length === 0}
+			<Hero>
+				<h1 class="text-2xl font-bold">No musics</h1>
+			</Hero>
+		{/if}
+
 		<Table>
 			{#each musics as music (music.id)}
 				<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />
@@ -65,7 +81,7 @@
 		</Table>
 	{:else}
 		<Hero>
-			<h1 class="text-5xl font-bold">Loading...</h1>
+			<Spinner />
 		</Hero>
 	{/if}
 </div>

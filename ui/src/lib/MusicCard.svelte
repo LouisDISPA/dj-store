@@ -22,14 +22,14 @@
 	}
 </script>
 
-<tr id={id.toString()}>
-	<td>
+<div class="card card-side bg-base-100 shadow-xl">
+	<figure>
 		<div class="priv-stack">
 			{#if preview_url}
 				<AudioPlayPause url={preview_url} />
 			{/if}
 			<div class="avatar">
-				<div class="mask rounded-lg w-16 h-16 drop-shadow-sm md:w-20 md:h-20">
+				<div class="mask rounded-lg w-16 h-16 drop-shadow-sm">
 					{#if image_hash}
 						<img src={image_hash} alt="music poster" />
 					{:else}
@@ -38,12 +38,13 @@
 				</div>
 			</div>
 		</div>
-	</td>
-	<td>
+	</figure>
+
+	<div class="card-body">
 		<div class="text-max text-sm opacity-50 truncate">{artist}</div>
 		<div class="text-max  font-bold truncate">{title}</div>
-	</td>
-	<td>
+	</div>
+	<div class="card-actions justify-end">
 		<div class="rating flex items-center">
 			{#if onVote}
 				<input
@@ -59,13 +60,12 @@
 				</p>
 			{/if}
 		</div>
-	</td>
-</tr>
+	</div>
+</div>
 
 <style>
 	.text-max {
-		width: 60vw;
-		max-width: 30rem;
+		width: 65vw;
 	}
 
 	.priv-stack > :global(*) {

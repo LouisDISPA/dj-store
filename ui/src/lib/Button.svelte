@@ -16,12 +16,13 @@
 	export let type: ButtonType = 'neutral';
 	export let disabled = false;
 	export let loading = false;
+	export let no_marging: boolean = false;
 
 	function submit() {
 		if (onSubmit) onSubmit();
 	}
 
-	const buttonClass = `btn btn-${type} m-2 text-base shadow-lg`;
+	const buttonClass = `btn btn-${type} ${no_marging ? '' : 'm-2'} text-base shadow-lg`;
 </script>
 
 <button type="button" class={buttonClass + (loading ? ' loading' : '')} on:click={submit} {disabled}

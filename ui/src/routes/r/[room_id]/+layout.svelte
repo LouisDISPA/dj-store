@@ -7,12 +7,7 @@
 
 {#if !$auth && $page.params.room_id}
 	<Hero>
-		<div class="bg-base-100 rounded-lg shadow-lg px-6">
-			<h3 class="text-xl font-semibold text-center pt-4 pb-3">Connecting to room</h3>
-			<div class="flex items-center">
-				<Spinner />
-			</div>
-		</div>
+		<Spinner />
 	</Hero>
 {:else}
 	<slot />
