@@ -9,12 +9,18 @@
 	import { page } from '$app/stores';
 	import { getMusics } from '$lib/client';
 	import Spinner from '$lib/Spinner.svelte';
+	import { flip } from 'svelte/animate';
+	import { sineInOut } from 'svelte/easing';
 
 	let musics: Music[] | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
 	const room_id = $page.params.room_id as string;
+
+	const interval = setInterval(async () => {
+		musics = await getMusics(auth_token, room_id);
+	}, 60000 * 5);
 
 	onMount(async () => {
 		musics = await getMusics(auth_token, room_id);
@@ -67,6 +73,7 @@
 
 		return () => {
 			socket.close();
+			clearInterval(interval);
 		};
 	});
 </script>
@@ -82,8 +89,10 @@
 		</Hero>
 	{:else}
 		<Table>
-			{#each musics as music (music.id)}
-				<MusicTile {...music} />
+			{#each musics as music (-music.id)}
+				<div animate:flip={{ duration: 400, easing: sineInOut }}>
+					<MusicTile {...music} />
+				</div>
 			{/each}
 		</Table>
 	{/if}

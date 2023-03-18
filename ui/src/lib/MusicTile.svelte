@@ -52,9 +52,8 @@
 					on:change={toogleVote}
 					checked={is_voted}
 				/>
-			{/if}
-			{#if votes !== undefined}
-				<p class="ml-2">
+			{:else if votes !== undefined}
+				<p class="badge text-xl py-5 px-4 mr-4">
 					{votes}
 				</p>
 			{/if}
