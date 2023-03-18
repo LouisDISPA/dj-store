@@ -7,7 +7,6 @@
 	export let user_count: number;
 	export let expiration: Date;
 	export let creation: Date;
-	export let active: boolean;
 
 	export let onDelete: ((id: RoomId) => void) | undefined = undefined;
 	export let onShare: ((id: RoomId) => void) | undefined = undefined;

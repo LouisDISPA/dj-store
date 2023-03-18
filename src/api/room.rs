@@ -217,6 +217,8 @@ pub struct Music {
     id: i64,
     title: String,
     artist: String,
+    preview_url: String,
+    image_hash: String,
     votes: u32,
 }
 
@@ -268,6 +270,8 @@ pub async fn get_musics(
             music::Column::Title,
             music::Column::Artist,
             music::Column::Id,
+            music::Column::PreviewUrl,
+            music::Column::ImageHash,
         ])
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .group_by_col(music::Column::Id)
@@ -317,6 +321,8 @@ pub async fn get_music_detail(
             music::Column::Title,
             music::Column::Artist,
             music::Column::Id,
+            music::Column::PreviewUrl,
+            music::Column::ImageHash,
         ])
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .from_subquery(all_votes, vote::Entity)

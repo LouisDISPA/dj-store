@@ -26,6 +26,8 @@ enum Music {
     // Mbid,
     Title,
     Artist,
+    PreviewUrl,
+    ImageHash,
 }
 
 #[derive(Iden)]
@@ -130,6 +132,8 @@ impl MigrationTrait for Migration {
                     // .col(ColumnDef::new(Music::Mbid).uuid().not_null().unique_key())
                     .col(ColumnDef::new(Music::Title).text().not_null())
                     .col(ColumnDef::new(Music::Artist).text().not_null())
+                    .col(ColumnDef::new(Music::PreviewUrl).text())
+                    .col(ColumnDef::new(Music::ImageHash).text())
                     .to_owned(),
             )
             .await?;

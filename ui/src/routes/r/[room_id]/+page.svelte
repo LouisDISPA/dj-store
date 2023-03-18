@@ -22,12 +22,14 @@
 
 	async function pageLoad() {
 		musics = await getMusics(auth_token, room_id);
+		console.log(musics);
 		searched = false;
 	}
 
 	async function onSearch(search: string) {
 		try {
 			musics = await getSearch(auth_token, room_id, search);
+			console.log(musics);
 			searched = true;
 		} catch (err) {
 			error = 'Search failed (retry later)';

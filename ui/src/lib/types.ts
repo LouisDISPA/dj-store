@@ -5,7 +5,9 @@ export type Music = {
 	id: MusicId;
 	title: string;
 	artist: string;
-	votes?: number;
+	preview_url: string;
+	image_hash: string;
+	votes: number;
 };
 
 export type Vote = {

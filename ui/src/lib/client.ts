@@ -17,7 +17,7 @@ async function getMusics(auth_token: string, room_id: RoomId): Promise<Music[]> 
 		throw error(res.status, { message, detail });
 	}
 
-	return await res.json();
+	return res.json();
 }
 
 async function getSearch(auth_token: string, rooom_id: RoomId, query: string): Promise<Music[]> {
@@ -32,7 +32,7 @@ async function getSearch(auth_token: string, rooom_id: RoomId, query: string): P
 		throw error(res.status, { message, detail });
 	}
 
-	return await res.json();
+	return res.json();
 }
 
 async function voteForMusic(auth_token: string, room_id: RoomId, like: boolean, music_id: MusicId) {

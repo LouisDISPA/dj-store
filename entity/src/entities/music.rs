@@ -9,6 +9,8 @@ pub struct Model {
     pub id: i64,
     pub title: String,
     pub artist: String,
+    pub preview_url: Option<String>,
+    pub image_hash: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

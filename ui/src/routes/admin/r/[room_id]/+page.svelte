@@ -35,13 +35,12 @@
 						}
 					}
 				).then((res) => res.json());
-				new_music.votes ??= 1;
 				musics.push(new_music);
 			} else {
-				music.votes! += like ? 1 : -1;
+				music.votes += like ? 1 : -1;
 			}
 
-			musics.sort((a, b) => b.votes! - a.votes!);
+			musics.sort((a, b) => b.votes - a.votes);
 			musics = musics;
 		};
 

@@ -1,10 +1,13 @@
 <script lang="ts">
+	import AudioPlayPause from './AudioPlayPause.svelte';
 	import type { MusicId } from './types';
 
 	export let id: MusicId;
 	export let title: string;
 	export let artist: string;
 	export let is_voted = false;
+	export let preview_url: string | undefined = undefined;
+	export let image_hash: string | undefined = undefined;
 	export let votes: number | undefined = undefined;
 	export let onVote: OnVote | undefined = undefined;
 
@@ -20,13 +23,22 @@
 </script>
 
 <tr id={id.toString()}>
-	<!-- <td>
-		<div class="avatar">
-			<div class="mask mask-squircle w-12 h-12">
-				<img src="https://picsum.photos/200/300" alt="music poster" />
+	<td>
+		<div class="priv-stack">
+			{#if preview_url}
+				<AudioPlayPause url={preview_url} />
+			{/if}
+			<div class="avatar">
+				<div class="mask rounded-lg w-20 h-20 drop-shadow-sm">
+					{#if image_hash}
+						<img src={image_hash} alt="music poster" />
+					{:else}
+						<img src="https://via.placeholder.com/150" alt="music poster" />
+					{/if}
+				</div>
 			</div>
 		</div>
-	</td> -->
+	</td>
 	<td>
 		<div class="text-max text-sm opacity-50 truncate">{artist}</div>
 		<div class="text-max  font-bold truncate">{title}</div>
@@ -53,5 +65,27 @@
 <style>
 	.text-max {
 		width: 65vw;
+	}
+
+	.priv-stack > :global(*) {
+		display: grid;
+		grid-column-start: 1;
+		grid-row-start: 1;
+		align-content: center;
+		justify-items: center;
+	}
+
+	.priv-stack {
+		display: inline-grid;
+		place-items: center;
+		align-items: flex-end;
+	}
+
+	.priv-stack > :global(*):nth-child(1) {
+		z-index: 3;
+	}
+
+	.priv-stack > :global(*):nth-child(2) {
+		z-index: 2;
 	}
 </style>

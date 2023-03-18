@@ -27,6 +27,8 @@ pub struct SearchRequest {
 pub struct SearchMusic {
     pub title: String,
     pub artist: String,
+    pub preview_url: Option<String>,
+    pub image_hash: Option<String>,
     pub id: u64,
 }
 
@@ -36,6 +38,8 @@ impl From<Track> for SearchMusic {
             id: music.id,
             title: music.title,
             artist: music.artist.name,
+            preview_url: Some(music.preview),
+            image_hash: music.album.map(|album| album.cover_medium),
         }
     }
 }
@@ -113,6 +117,8 @@ pub async fn get_music_or_store_music(
                 id: Set(music_id as i64), // TODO: fix this
                 title: Set(tract.title),
                 artist: Set(tract.artist.name),
+                preview_url: Set(Some(tract.preview)),
+                image_hash: Set(tract.album.map(|album| album.cover_medium)), // TODO: make custom deezer client
             };
             music.insert(&state.db).await
         }
