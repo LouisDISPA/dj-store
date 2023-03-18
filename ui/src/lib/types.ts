@@ -1,4 +1,4 @@
-export type MusicId = string;
+export type MusicId = number;
 export type RoomId = string;
 
 export type Music = {

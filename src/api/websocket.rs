@@ -12,16 +12,15 @@ use axum::{
 // use deku::{DekuContainerWrite, DekuUpdate, DekuWrite};
 use serde::Serialize;
 use tokio::{select, sync::broadcast::Receiver, time::timeout};
-use uuid::Uuid;
 
 use crate::utils::jwt::{self, Role};
 use crate::utils::room_id::RoomID;
 
-use super::state::ApiState;
+use super::{state::ApiState, MusicId};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct VoteEvent {
-    pub music_id: Uuid,
+    pub music_id: MusicId,
     pub like: bool,
 }
 

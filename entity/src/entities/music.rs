@@ -6,9 +6,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "music")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: u32,
-    /// MusicBrainz ID
-    pub mbid: Uuid,
+    pub id: i64,
     pub title: String,
     pub artist: String,
 }

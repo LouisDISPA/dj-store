@@ -15,6 +15,8 @@ mod websocket;
 
 mod state;
 
+pub type MusicId = u64;
+
 pub fn router(db: DatabaseConnection) -> Router {
     let state = state::ApiState::init(db);
 

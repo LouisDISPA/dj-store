@@ -12,21 +12,16 @@ use thiserror::Error;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use crate::utils::{
-    get_music_or_store_music,
-    jwt::{Role, User, UserToken},
-};
+use crate::utils::jwt::{Role, User, UserToken};
 
 use entity::*;
-use sea_orm::{
-    prelude::*, DatabaseBackend, FromQueryResult, JoinType, QuerySelect, QueryTrait, Set, Statement,
-};
+use sea_orm::{prelude::*, FromQueryResult, JoinType, QuerySelect, QueryTrait, Set};
 
-use sea_orm::sea_query::{Alias, Expr, Order, Query, SqliteQueryBuilder};
+use sea_orm::sea_query::{Alias, Expr, Order, Query};
 
 use crate::utils::room_id::RoomID;
 
-use super::{state::ApiState, websocket::VoteEvent};
+use super::{search::get_music_or_store_music, state::ApiState, websocket::VoteEvent, MusicId};
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JoinError {
@@ -137,7 +132,7 @@ impl IntoResponse for VoteError {
 
 #[derive(Serialize, Deserialize)]
 pub struct VoteBody {
-    music_id: Uuid,
+    music_id: MusicId,
     like: bool,
 }
 
@@ -146,7 +141,7 @@ impl VoteBody {
         vote::ActiveModel {
             user_token: Set(user_token),
             room_id: Set(room_id),
-            music_id: Set(self.music_id),
+            music_id: Set(self.music_id as i64), // TODO: fix this
             like: Set(self.like),
             ..Default::default()
         }
@@ -163,7 +158,7 @@ pub async fn vote(
         return Err(VoteError::UserNotInRoom);
     }
 
-    let music = get_music_or_store_music(&state.db, vote.music_id)
+    let music = get_music_or_store_music(&state, vote.music_id)
         .await
         .map_err(|e| {
             log::error!("Failed to get music: {}", e);
@@ -172,7 +167,7 @@ pub async fn vote(
 
     let last_vote = vote::Entity::find()
         .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
-        .filter(vote::Column::MusicId.eq(music.mbid))
+        .filter(vote::Column::MusicId.eq(music.id))
         .filter(vote::Column::UserToken.eq(user.uid))
         .group_by(vote::Column::UserToken)
         .one(&state.db)
@@ -202,7 +197,7 @@ pub async fn vote(
 
     if let Some(room) = rooms.get(&room_id) {
         room.send(VoteEvent {
-            music_id: music.mbid,
+            music_id: music.id as u64, // TODO: fix this
             like: vote.like,
         })
         .map_err(|e| {
@@ -219,7 +214,7 @@ pub async fn vote(
 // a column name is generated from the struct field name
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct Music {
-    id: Uuid,
+    id: i64,
     title: String,
     artist: String,
     votes: u32,
@@ -269,15 +264,18 @@ pub async fn get_musics(
         .into_query();
 
     let statement = Query::select()
-        .columns([music::Column::Title, music::Column::Artist])
-        .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
+        .columns([
+            music::Column::Title,
+            music::Column::Artist,
+            music::Column::Id,
+        ])
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
-        .group_by_col(music::Column::Mbid)
+        .group_by_col(music::Column::Id)
         .from_subquery(all_votes, vote::Entity)
         .join(
             JoinType::LeftJoin,
             music::Entity,
-            Expr::col(vote::Column::MusicId).equals(music::Column::Mbid),
+            Expr::col(vote::Column::MusicId).equals(music::Column::Id),
         )
         .and_having(Expr::col(Alias::new("votes")).gt(0))
         .order_by(Alias::new("votes"), Order::Desc)
@@ -297,7 +295,7 @@ pub async fn get_musics(
 
 pub async fn get_music_detail(
     State(state): State<ApiState>,
-    Path((room_id, music_id)): Path<(RoomID, Uuid)>,
+    Path((room_id, music_id)): Path<(RoomID, MusicId)>,
     user: User,
 ) -> Result<Json<Music>, GetMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
@@ -308,19 +306,22 @@ pub async fn get_music_detail(
         .select_only()
         .column_as(vote::Column::VoteDate.max(), "vote_date")
         .column(vote::Column::Like)
-        .filter(vote::Column::MusicId.eq(music_id))
+        .filter(vote::Column::MusicId.eq(music_id as i64)) // TODO: fix this
         .filter(vote::Column::RoomId.eq(room_id.value()))
         .left_join(music::Entity)
         .group_by(vote::Column::UserToken)
         .into_query();
 
     let statement = Query::select()
-        .columns([music::Column::Title, music::Column::Artist])
-        .expr_as(Expr::col(music::Column::Mbid), Alias::new("id"))
+        .columns([
+            music::Column::Title,
+            music::Column::Artist,
+            music::Column::Id,
+        ])
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .from_subquery(all_votes, vote::Entity)
         .from(music::Entity)
-        .and_where(music::Column::Mbid.eq(music_id))
+        .and_where(music::Column::Id.eq(music_id as i64)) // TODO: fix this
         .take();
 
     let backend = state.db.get_database_backend();
@@ -341,7 +342,7 @@ pub async fn get_music_detail(
 
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct VotedMusic {
-    music_id: Uuid,
+    music_id: MusicId,
     title: String,
     artist: String,
     vote_date: DateTimeUtc,

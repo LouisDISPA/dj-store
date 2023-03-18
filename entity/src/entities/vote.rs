@@ -9,7 +9,7 @@ pub struct Model {
     pub id: u32,
     pub user_token: Uuid,
     pub room_id: u32,
-    pub music_id: Uuid,
+    pub music_id: i64,
     pub vote_date: DateTimeUtc,
     pub like: bool,
 }
@@ -19,7 +19,7 @@ pub enum Relation {
     #[sea_orm(
         belongs_to = "super::music::Entity",
         from = "Column::MusicId",
-        to = "super::music::Column::Mbid"
+        to = "super::music::Column::Id"
     )]
     Music,
     #[sea_orm(

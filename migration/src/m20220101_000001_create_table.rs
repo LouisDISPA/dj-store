@@ -23,7 +23,7 @@ enum Music {
     Table,
     Id,
     /// MusicBrainz ID
-    Mbid,
+    // Mbid,
     Title,
     Artist,
 }
@@ -125,10 +125,9 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Music::Id)
                             .unsigned()
                             .not_null()
-                            .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Music::Mbid).uuid().not_null().unique_key())
+                    // .col(ColumnDef::new(Music::Mbid).uuid().not_null().unique_key())
                     .col(ColumnDef::new(Music::Title).text().not_null())
                     .col(ColumnDef::new(Music::Artist).text().not_null())
                     .to_owned(),
@@ -156,13 +155,13 @@ impl MigrationTrait for Migration {
                             .to_col(Room::PublicId),
                     )
                     .col(ColumnDef::new(Vote::UserToken).uuid().not_null())
-                    .col(ColumnDef::new(Vote::MusicId).uuid().not_null())
+                    .col(ColumnDef::new(Vote::MusicId).unsigned().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from_tbl(Vote::Table)
                             .from_col(Vote::MusicId)
                             .to_tbl(Music::Table)
-                            .to_col(Music::Mbid),
+                            .to_col(Music::Id),
                     )
                     .col(
                         ColumnDef::new(Vote::VoteDate)
