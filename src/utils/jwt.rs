@@ -43,9 +43,6 @@ impl User {
     }
 }
 
-// TODO: Better secret
-static JWT_SECRET: &str = "secret";
-
 #[derive(Serialize, Deserialize)]
 pub struct UserToken {
     access_token: String,
@@ -112,20 +109,11 @@ impl Claims {
 }
 
 pub fn sign(user: User) -> String {
-    jsonwebtoken::encode(
-        &Header::default(),
-        &Claims::new(user),
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
-    )
-    .unwrap()
+    jsonwebtoken::encode(&Header::default(), &Claims::new(user), get_jwt_encoder()).unwrap()
 }
 
 pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
-    let token_decode = jsonwebtoken::decode(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
-        &Validation::default(),
-    );
+    let token_decode = jsonwebtoken::decode(token, get_jwt_decoder(), &Validation::default());
     let claim: Claims = match token_decode {
         Ok(token_data) => token_data.claims,
         Err(e) => return Err(JwtVerifyError::InvalidJwt(e.to_string())),
@@ -137,4 +125,59 @@ pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
         ));
     }
     Ok(claim.user)
+}
+
+// --- JWT secret key management ---
+
+/// A pair of JWT encoder and decoder keys.
+/// This is used to avoid having to recompute the keys every time they are used.
+/// This is safe because the keys are only initialized once at the start of the program.
+struct JwtKeyPair {
+    encoder: EncodingKey,
+    decoder: DecodingKey,
+}
+
+static mut JWT_SECRET: Option<JwtKeyPair> = None;
+
+/// Set the JWT secret. This should only be called once at the start of the program.
+///
+/// # Panics
+///
+/// Panics if the secret is empty or if the secret is already set.
+pub fn set_jwt_secret(secret: &str) {
+    if secret.is_empty() {
+        panic!("JWT_SECRET cannot be empty");
+    }
+    let secret_bytes = secret.as_bytes();
+
+    // This is safe because JWT_SECRET is only initialized once at the start of the program
+    unsafe {
+        if JWT_SECRET.is_some() {
+            panic!("JWT_SECRET is already set");
+        }
+        JWT_SECRET = Some(JwtKeyPair {
+            encoder: EncodingKey::from_secret(secret_bytes),
+            decoder: DecodingKey::from_secret(secret_bytes),
+        });
+    }
+}
+
+/// Get the JWT encoder key. This should only be called after the secret is set.
+///
+/// # Panics
+///
+/// Panics if the secret is not set.
+fn get_jwt_encoder() -> &'static EncodingKey {
+    // This is safe because JWT_SECRET is only initialized once at the start of the program
+    unsafe { &JWT_SECRET.as_ref().expect("JWT secret not set").encoder }
+}
+
+/// Get the JWT decoder key. This should only be called after the secret is set.
+///
+/// # Panics
+///
+/// Panics if the secret is not set.
+fn get_jwt_decoder() -> &'static DecodingKey {
+    // This is safe because JWT_SECRET is only initialized once at the start of the program
+    unsafe { &JWT_SECRET.as_ref().expect("JWT secret not set").decoder }
 }

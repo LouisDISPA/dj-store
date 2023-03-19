@@ -16,6 +16,9 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
+    let jwt_secret = env::var("JWT_SECRET").expect("Missing JWT_SECRET env var");
+
+    utils::jwt::set_jwt_secret(&jwt_secret);
 
     let db = Database::connect(db_adress)
         .await
