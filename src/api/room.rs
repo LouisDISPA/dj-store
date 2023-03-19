@@ -211,7 +211,7 @@ pub async fn vote(
 // a column name is generated from the struct field name
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct Music {
-    id: i64,
+    id: i64, // TODO: fix this
     title: String,
     artist: String,
     preview_url: String,
@@ -345,9 +345,7 @@ pub async fn get_music_detail(
 
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct VotedMusic {
-    music_id: MusicId,
-    title: String,
-    artist: String,
+    music_id: i64, //TODO: fix this
     vote_date: DateTimeUtc,
     like: bool,
 }
@@ -387,7 +385,6 @@ pub async fn get_voted_musics(
         .filter(vote::Column::UserToken.eq(user.uid))
         .filter(vote::Column::RoomId.eq(room_id.value()))
         .group_by(vote::Column::MusicId)
-        .left_join(music::Entity)
         .into_model()
         .all(&state.db)
         .await

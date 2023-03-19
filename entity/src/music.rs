@@ -6,7 +6,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "music")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
+    pub id: i64, // TODO: fix this
     pub title: String,
     pub artist: String,
     pub preview_url: Option<String>,
