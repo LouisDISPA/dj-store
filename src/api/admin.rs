@@ -1,3 +1,4 @@
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -6,6 +7,7 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use displaydoc::Display;
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -19,10 +21,10 @@ use crate::utils::{
 
 use super::state::ApiState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct LoginBody {
     username: String,
-    password: String,
+    password: Secret<String>,
 }
 
 #[derive(Error, Display, Debug)]
@@ -47,12 +49,16 @@ pub async fn login(Json(body): Json<LoginBody>) -> Result<Json<UserToken>, Login
     let username = body.username;
     let password = body.password;
 
-    // TODO: Check username and password
-    if username != "admin" || password != "admin" {
+    let admin = get_admin_info();
+
+    let result = tokio::task::spawn_blocking(move || {
+        Argon2::default().verify_password(password.expose_secret().as_bytes(), &admin.password)
+    })
+    .await;
+
+    if admin.username != username || result.is_err() {
         return Err(LoginError::InvalidCredentials);
     }
-
-    // TODO: Check if user is in database
 
     Ok(Json(User::new_admin().into()))
 }
@@ -239,4 +245,29 @@ pub async fn delete_room(
             Err(DeleteRoomsError::InternalError)
         }
     }
+}
+
+struct AdminInfo {
+    username: String,
+    password: PasswordHash<'static>,
+}
+
+static mut ADMIN_INFO: Option<AdminInfo> = None;
+
+pub fn set_admin_info(username: String, password: String) {
+    let password = Box::leak(password.into_boxed_str());
+    let password = PasswordHash::new(password).expect("Failed to hash password");
+
+    // This is safe because ADMIN_INFO is only initialized once at the start of the program
+    unsafe {
+        if ADMIN_INFO.is_some() {
+            panic!("JWT_SECRET is already set");
+        }
+        ADMIN_INFO = Some(AdminInfo { username, password });
+    }
+}
+
+fn get_admin_info() -> &'static AdminInfo {
+    // This is safe because ADMIN_INDO is only initialized once at the start of the program
+    unsafe { ADMIN_INFO.as_ref().expect("JWT secret not set") }
 }

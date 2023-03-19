@@ -15,6 +15,8 @@ mod websocket;
 
 mod state;
 
+pub use admin::set_admin_info;
+
 pub type MusicId = u64;
 
 pub fn router(db: DatabaseConnection) -> Router {
