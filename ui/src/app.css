@@ -4,5 +4,5 @@
 @tailwind variants;
 
 body {
-	@apply bg-base-300 min-h-screen;
+	@apply bg-base-200 min-h-screen;
 }

@@ -89,10 +89,10 @@
 		</Hero>
 	{:else}
 		<Table>
-			{#each musics as music (-music.id)}
-				<div animate:flip={{ duration: 400, easing: sineInOut }}>
+			{#each musics as music (music.id)}
+				<tr id={music.id.toString()} animate:flip={{ duration: 400, easing: sineInOut }}>
 					<MusicTile {...music} />
-				</div>
+				</tr>
 			{/each}
 		</Table>
 	{/if}

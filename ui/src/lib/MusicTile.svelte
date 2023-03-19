@@ -22,44 +22,42 @@
 	}
 </script>
 
-<tr id={id.toString()}>
-	<td>
-		<div class="priv-stack">
-			{#if preview_url}
-				<AudioPlayPause url={preview_url} />
-			{/if}
-			<div class="avatar">
-				<div class="mask rounded-lg w-16 h-16 drop-shadow-sm md:w-20 md:h-20">
-					{#if image_hash}
-						<img src={image_hash} alt="music poster" />
-					{:else}
-						<img src="https://via.placeholder.com/150" alt="music poster" />
-					{/if}
-				</div>
+<td>
+	<div class="priv-stack">
+		{#if preview_url}
+			<AudioPlayPause url={preview_url} />
+		{/if}
+		<div class="avatar">
+			<div class="mask rounded-lg w-16 h-16 drop-shadow-sm md:w-20 md:h-20">
+				{#if image_hash}
+					<img src={image_hash} alt="music poster" />
+				{:else}
+					<img src="https://via.placeholder.com/150" alt="music poster" />
+				{/if}
 			</div>
 		</div>
-	</td>
-	<td>
-		<div class="text-max text-sm opacity-50 truncate">{artist}</div>
-		<div class="text-max  font-bold truncate">{title}</div>
-	</td>
-	<td>
-		<div class="rating flex items-center">
-			{#if onVote}
-				<input
-					type="checkbox"
-					class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80"
-					on:change={toogleVote}
-					checked={is_voted}
-				/>
-			{:else if votes !== undefined}
-				<p class="badge text-xl py-5 px-4 mr-4">
-					{votes}
-				</p>
-			{/if}
-		</div>
-	</td>
-</tr>
+	</div>
+</td>
+<td>
+	<div class="text-max text-sm opacity-50 truncate">{artist}</div>
+	<div class="text-max  font-bold truncate">{title}</div>
+</td>
+<td>
+	<div class="rating flex items-center">
+		{#if onVote}
+			<input
+				type="checkbox"
+				class="mask mask-heart bg-red-500 opacity-30 checked:opacity-80"
+				on:change={toogleVote}
+				checked={is_voted}
+			/>
+		{:else if votes !== undefined}
+			<p class="badge text-xl py-5 px-4 mr-4">
+				{votes}
+			</p>
+		{/if}
+	</div>
+</td>
 
 <style>
 	.text-max {

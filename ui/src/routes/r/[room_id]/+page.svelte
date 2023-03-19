@@ -76,7 +76,9 @@
 
 		<Table>
 			{#each musics as music (music.id)}
-				<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />
+				<tr id={music.id.toString()}>
+					<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />
+				</tr>
 			{/each}
 		</Table>
 	{:else}
