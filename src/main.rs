@@ -4,6 +4,7 @@ use axum::Router;
 use log::info;
 use migration::MigratorTrait;
 use sea_orm::Database;
+use tokio::signal;
 
 mod api;
 #[cfg(feature = "embed-ui")]
@@ -45,11 +46,16 @@ async fn main() {
     // Start listening on the given address.
     let addr = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "0.0.0.0:3000".to_string());
-    let addr = addr.parse().unwrap();
-    info!("Listening on http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
+        .unwrap_or_else(|| "0.0.0.0:3000".to_string())
+        .parse()
         .unwrap();
+
+    info!("Listening on http://{}", addr);
+
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+            info!("Shutting down");
+        },
+        _ = axum::Server::bind(&addr).serve(app.into_make_service()) => {},
+    }
 }
