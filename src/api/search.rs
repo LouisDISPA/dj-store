@@ -9,7 +9,7 @@ use displaydoc::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use entity::music;
+use entity::{music, room};
 use sea_orm::{prelude::*, Set};
 
 use crate::utils::{
@@ -77,7 +77,15 @@ pub async fn search(
         return Err(SearchError::UserNotInRoom);
     }
 
-    // TODO: check if room exists
+    room::Entity::find()
+        .filter(room::Column::PublicId.eq(room_id.value()))
+        .one(&state.db)
+        .await
+        .map_err(|e| {
+            log::error!("Failed to get room: {}", e);
+            SearchError::InternalError
+        })?
+        .ok_or(SearchError::RoomNotFound)?;
 
     let response = state
         .search_client

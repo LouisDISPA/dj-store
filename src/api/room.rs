@@ -102,8 +102,6 @@ pub async fn join(
 
 #[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VoteError {
-    /// The room does not exist.
-    RoomNotFound,
     /// The user is not in the room.
     UserNotInRoom,
     /// The music does not exist.
@@ -117,7 +115,6 @@ pub enum VoteError {
 impl IntoResponse for VoteError {
     fn into_response(self) -> Response {
         let status = match self {
-            VoteError::RoomNotFound => StatusCode::NOT_FOUND,
             VoteError::UserNotInRoom => StatusCode::UNAUTHORIZED,
             VoteError::AlreadyVoted => StatusCode::BAD_REQUEST,
             VoteError::MusicNotFound => StatusCode::BAD_REQUEST,
@@ -162,7 +159,7 @@ pub async fn vote(
         .await
         .map_err(|e| {
             log::error!("Failed to get music: {}", e);
-            VoteError::InternalError
+            VoteError::MusicNotFound
         })?;
 
     let last_vote = vote::Entity::find()
@@ -386,12 +383,7 @@ pub async fn get_voted_musics(
     }
 
     vote::Entity::find()
-        .select_only()
         .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
-        .column(vote::Column::MusicId)
-        .column(vote::Column::Like)
-        .column(music::Column::Title)
-        .column(music::Column::Artist)
         .filter(vote::Column::UserToken.eq(user.uid))
         .filter(vote::Column::RoomId.eq(room_id.value()))
         .group_by(vote::Column::MusicId)
