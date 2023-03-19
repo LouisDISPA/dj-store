@@ -1,5 +1,4 @@
 <script lang="ts">
-	import QRious from 'qrious';
 	import { onMount } from 'svelte';
 	import Button from './Button.svelte';
 
@@ -7,7 +6,8 @@
 	export let onClose: (() => void) | undefined = undefined;
 
 	let canvas: HTMLCanvasElement;
-	onMount(() => {
+	onMount(async () => {
+		const QRious = (await import('qrious')).default;
 		new QRious({
 			element: canvas,
 			value: url,
@@ -20,8 +20,6 @@
 
 <div
 	class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex items-center justify-center"
-	on:click={onClose}
-	on:keypress={onClose}
 >
 	<!-- Modal content -->
 	<div class="bg-base-100 rounded-lg shadow-lg">
