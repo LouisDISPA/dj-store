@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AudioPlayPause from './AudioPlayPause.svelte';
 	import Stack from './Stack.svelte';
-	import type { MusicId } from './types';
+	import type { MusicId } from '$lib/types';
 
 	export let id: MusicId;
 	export let title: string;

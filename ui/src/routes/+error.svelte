@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import Button from '$lib/Button.svelte';
-	import Hero from '$lib/Hero.svelte';
+	import Button from '$lib/components/Button.svelte';
+	import Hero from '$lib/components/Hero.svelte';
 	import { goto } from '$lib/utils';
 </script>
 

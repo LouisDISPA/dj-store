@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import NavBar from '$lib/NavBar.svelte';
+	import NavBar from '$lib/components/NavBar.svelte';
 	import { joinRoom, tryRecallUser } from '$lib/auth';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';

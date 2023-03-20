@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { auth } from '$lib/auth';
-	import Button from '$lib/Button.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import { getMusics, getSearch, voteForMusic, voted_for } from '$lib/client';
-	import Hero from '$lib/Hero.svelte';
-	import MusicTile from '$lib/MusicTile.svelte';
-	import Search from '$lib/Search.svelte';
-	import Spinner from '$lib/Spinner.svelte';
-	import Table from '$lib/Table.svelte';
+	import Hero from '$lib/components/Hero.svelte';
+	import MusicTile from '$lib/components/MusicTile.svelte';
+	import Search from '$lib/components/Search.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import Table from '$lib/components/Table.svelte';
 	import type { Music, MusicId } from '$lib/types';
 	import { onMount } from 'svelte';
 

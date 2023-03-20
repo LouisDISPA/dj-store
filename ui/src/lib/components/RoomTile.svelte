@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from './Button.svelte';
-	import type { RoomId } from './types';
-	import { goto, timeFormat } from './utils';
+	import type { RoomId } from '$lib/types';
+	import { goto, timeFormat } from '$lib/utils';
 
 	export let id: RoomId;
 	export let user_count: number;

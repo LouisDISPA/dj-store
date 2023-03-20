@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { goto } from './utils.js';
+	import { goto } from '$lib/utils.js';
 	import ScannerBorders from './ScannerBorders.svelte';
 	import jsQR from 'jsqr';
 	import Spinner from './Spinner.svelte';

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { auth } from '$lib/auth';
 	import { goto } from '$lib/utils';
-	import Button from '$lib/Button.svelte';
-	import Modal from '$lib/Modal.svelte';
+	import Button from '$lib/components/Button.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 </script>
 
 {#if $auth?.role !== 'Admin'}

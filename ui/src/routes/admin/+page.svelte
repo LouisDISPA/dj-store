@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Button from '$lib/Button.svelte';
-	import RoomTile from '$lib/RoomTile.svelte';
-	import Table from '$lib/Table.svelte';
-	import QrCodePopup from '$lib/QrCodePopup.svelte';
+	import Button from '$lib/components/Button.svelte';
+	import RoomTile from '$lib/components/RoomTile.svelte';
+	import Table from '$lib/components/Table.svelte';
+	import QrCodePopup from '$lib/components/QrCodePopup.svelte';
 	import { env, nowPlus, randomRoomID } from '$lib/utils';
 	import type { Room, RoomId } from '$lib/types';
 	import { createRoom, deleteRoom, getRooms } from '$lib/client';
 	import { auth } from '$lib/auth';
 	import { onMount } from 'svelte';
-	import Hero from '$lib/Hero.svelte';
+	import Hero from '$lib/components/Hero.svelte';
 
 	let rooms: Room[] | undefined;
 	let roomUrl: string | undefined;

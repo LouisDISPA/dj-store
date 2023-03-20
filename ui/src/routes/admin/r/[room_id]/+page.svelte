@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Hero from '$lib/Hero.svelte';
-	import MusicTile from '$lib/MusicTile.svelte';
-	import Table from '$lib/Table.svelte';
+	import Hero from '$lib/components/Hero.svelte';
+	import MusicTile from '$lib/components/MusicTile.svelte';
+	import Table from '$lib/components/Table.svelte';
 	import type { Music } from '$lib/types';
 	import { env, goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/auth';
 	import { page } from '$app/stores';
 	import { getMusics } from '$lib/client';
-	import Spinner from '$lib/Spinner.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { flip } from 'svelte/animate';
 	import { sineInOut } from 'svelte/easing';
 

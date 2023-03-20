@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Button from '$lib/Button.svelte';
-	import PassCode from '$lib/PassCode.svelte';
+	import Button from '$lib/components/Button.svelte';
+	import PassCode from '$lib/components/PassCode.svelte';
 	import { goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { auth, disconnect, joinRoom } from '$lib/auth';
 	import { page } from '$app/stores';
-	import Modal from '$lib/Modal.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 
 	let input = '';
 	let loading = false;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { auth, connect } from '$lib/auth';
-	import Button from '$lib/Button.svelte';
-	import TextInput from '$lib/TextInput.svelte';
+	import Button from '$lib/components/Button.svelte';
+	import TextInput from '$lib/components/TextInput.svelte';
 	import { goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 
