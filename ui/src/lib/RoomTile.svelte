@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from './Button.svelte';
 	import type { RoomId } from './types';
-	import { goto } from './utils';
+	import { goto, timeFormat } from './utils';
 
 	export let id: RoomId;
 	export let user_count: number;
@@ -10,14 +10,6 @@
 
 	export let onDelete: ((id: RoomId) => void) | undefined = undefined;
 	export let onShare: ((id: RoomId) => void) | undefined = undefined;
-
-	const timeFormat = new Intl.DateTimeFormat(undefined, {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric'
-	});
 </script>
 
 <tr {id}>

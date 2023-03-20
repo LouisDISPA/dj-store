@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
-import type { Music, MusicId, Room, RoomId } from './types';
+import type { Music, MusicId, Room, RoomId, Vote } from './types';
 import { convertApiRoom, env } from './utils';
 
 const voted_for: Writable<Set<MusicId>> = writable(new Set());
@@ -118,4 +118,32 @@ async function createRoom(auth_token: string, room_id: RoomId, expiration: Date)
 	return await res.json().then(convertApiRoom);
 }
 
-export { getMusics, getSearch, voteForMusic, getRooms, deleteRoom, createRoom, voted_for as votes };
+async function getVotes(access_token: string, room_id: RoomId): Promise<void> {
+	const res = await fetch(`${env.API_URL}/api/room/${room_id}/music/voted`, {
+		headers: {
+			Authorization: `Bearer ${access_token}`
+		}
+	});
+
+	if (!res.ok) {
+		const message = res.statusText;
+		const detail = await res.text();
+		throw error(res.status, { message, detail });
+	}
+
+	const votes: Vote[] = await res.json();
+
+	const new_votes = new Set(votes.filter((v) => v.like).map((v) => v.music_id));
+	voted_for.set(new_votes);
+}
+
+export {
+	getMusics,
+	getSearch,
+	voteForMusic,
+	getRooms,
+	deleteRoom,
+	createRoom,
+	getVotes,
+	voted_for
+};

@@ -1,11 +1,8 @@
-<div class="outer_spinner p-4 flex justify-center items-center">
+<div class="flex justify-center w-full">
 	<span class="spinner" />
 </div>
 
 <style lang="sass">
-.outer_spinner
-    width: 100%
-    height: 100%
 
 .spinner
     width: 75px

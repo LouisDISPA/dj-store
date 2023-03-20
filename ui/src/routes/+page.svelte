@@ -4,8 +4,8 @@
 	import { goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { auth, disconnect, joinRoom } from '$lib/auth';
-	import Hero from '$lib/Hero.svelte';
 	import { page } from '$app/stores';
+	import Modal from '$lib/Modal.svelte';
 
 	let input = '';
 	let loading = false;
@@ -58,24 +58,17 @@
 </script>
 
 {#if $auth?.room_id}
-	<Hero>
-		<!-- Modal content -->
-		<div class="bg-base-100 rounded-lg shadow-lg">
-			<!-- Modal header -->
-			<h3 class="text-xl font-semibold text-center pt-4 pb-3">Connected</h3>
-			<!-- Modal body -->
-			<div class="px-5 stack">
-				<p class="text-center">
-					You are already connected to room "{$auth?.room_id}". <br /> Do you want to reconnect?
-				</p>
-			</div>
-			<!-- Modal footer -->
-			<div class="flex justify-between rounded p-3">
-				<Button label="Cancel" type="primary" onSubmit={disconnect} />
-				<Button label="Reconnect" type="primary" onSubmit={reconnect} />
-			</div>
-		</div>
-	</Hero>
+	<Modal>
+		<span slot="title">Connected</span>
+		<span slot="body">
+			You are already connected to room "{$auth?.room_id}". <br />
+			Do you want to reconnect?
+		</span>
+		<span slot="actions">
+			<Button label="Cancel" type="primary" onSubmit={disconnect} />
+			<Button label="Reconnect" type="primary" onSubmit={reconnect} />
+		</span>
+	</Modal>
 {:else}
 	<div id="page">
 		<h1 class="text-2xl font-bold p-2">Enter a code</h1>

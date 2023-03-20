@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/auth';
 	import Button from '$lib/Button.svelte';
-	import { getMusics, getSearch, voteForMusic, votes } from '$lib/client';
+	import { getMusics, getSearch, voteForMusic, voted_for } from '$lib/client';
 	import Hero from '$lib/Hero.svelte';
 	import MusicTile from '$lib/MusicTile.svelte';
 	import Search from '$lib/Search.svelte';
@@ -16,6 +16,7 @@
 	let error: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
+	// TODO: use context instead of stores
 	const auth_token = $auth?.access_token as string;
 	const room_id = $page.params.room_id as string;
 
@@ -77,7 +78,7 @@
 		<Table>
 			{#each musics as music (music.id)}
 				<tr id={music.id.toString()}>
-					<MusicTile {...music} {onVote} is_voted={$votes.has(music.id)} />
+					<MusicTile {...music} {onVote} is_voted={$voted_for.has(music.id)} />
 				</tr>
 			{/each}
 		</Table>

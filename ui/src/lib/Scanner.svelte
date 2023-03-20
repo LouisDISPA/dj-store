@@ -3,6 +3,8 @@
 	import { goto } from './utils.js';
 	import ScannerBorders from './ScannerBorders.svelte';
 	import jsQR from 'jsqr';
+	import Spinner from './Spinner.svelte';
+	import Stack from './Stack.svelte';
 
 	let video: HTMLVideoElement;
 	let canvas: HTMLCanvasElement;
@@ -89,20 +91,26 @@
 	}
 </script>
 
-<div class={`scanner ${active ? '' : 'scanner--hidden'}`}>
-	<div class="scanner__aspect-ratio-container">
-		<canvas bind:this={canvas} class="scanner__canvas" />
-		<!-- svelte-ignore a11y-media-has-caption -->
-		<video bind:this={video} on:canplay={handleCanPlay} class="scanner__video">
-			<!-- <track kind="captions" /> -->
-		</video>
-		<ScannerBorders />
-	</div>
+<Stack>
+	<div class="scanner" class:scanner--hidden={!active}>
+		<div class="scanner__aspect-ratio-container">
+			<canvas bind:this={canvas} class="scanner__canvas" />
+			<video bind:this={video} on:canplay={handleCanPlay} class="scanner__video">
+				<track kind="captions" />
+			</video>
+			<ScannerBorders />
+		</div>
 
-	<div class="scanner-tip">
-		<div>Scan a QR code with your camera to join a room.</div>
+		<div class="scanner-tip">
+			<div>Scan a QR code with your camera to join a room.</div>
+		</div>
 	</div>
-</div>
+	{#if !stream}
+		<div class="h-32">
+			<Spinner />
+		</div>
+	{/if}
+</Stack>
 
 <style>
 	.scanner {
@@ -117,6 +125,7 @@
 		overflow: hidden;
 		padding-bottom: 100%;
 		border-radius: 10%;
+		aspect-ratio: 1 / 1;
 	}
 	.scanner__video {
 		position: absolute;

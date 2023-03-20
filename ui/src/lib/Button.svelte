@@ -7,18 +7,23 @@
 	export let disabled = false;
 	export let loading = false;
 	export let no_marging = false;
+	export let outlined = false;
+	export let normal_case = false;
 
 	function submit() {
 		if (onSubmit) onSubmit();
 	}
-	// required to have each button style
-	// daisyui don't have a way to do this
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const buttonClassStyles = 'btn-neutral btn-primary btn-secondary btn-accent btn-ghost btn-error';
-
-	const buttonClass = `btn btn-${type} ${no_marging ? '' : 'm-2'} text-base shadow-lg`;
 </script>
 
-<button type="button" class={buttonClass + (loading ? ' loading' : '')} on:click={submit} {disabled}
-	>{label}</button
+<button
+	type="button"
+	class={`btn btn-${type}`}
+	class:btn-outline={outlined}
+	class:normal-case={normal_case}
+	class:m-2={!no_marging}
+	class:loading
+	on:click={submit}
+	{disabled}
 >
+	{label}
+</button>

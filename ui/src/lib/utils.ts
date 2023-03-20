@@ -40,3 +40,11 @@ export function convertApiRoom(room: Room): Room {
 		creation: new Date(room.creation)
 	};
 }
+
+export const timeFormat = new Intl.DateTimeFormat(undefined, {
+	year: 'numeric',
+	month: 'short',
+	day: 'numeric',
+	hour: 'numeric',
+	minute: 'numeric'
+});

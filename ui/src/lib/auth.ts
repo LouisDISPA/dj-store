@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
-import { votes } from './client';
-import type { RoomId, Vote } from './types';
+import { getVotes } from './client';
+import type { RoomId } from './types';
 import { env } from './utils';
 
 const auth: Writable<Auth | undefined> = writable();
@@ -97,13 +97,9 @@ async function tryRecallUser() {
 		const room_id = token_data.room_id as string;
 
 		try {
-			const get_votes = await getVotes(room_id, access_token);
-			const new_votes = new Set(get_votes.filter((v) => v.like).map((v) => v.music_id));
-
+			await getVotes(access_token, room_id);
 			console.log('User recalled');
-			votes.set(new_votes);
 			auth.set({ access_token, role, room_id });
-
 			return true;
 		} catch (e) {
 			disconnect();
@@ -113,22 +109,6 @@ async function tryRecallUser() {
 
 	disconnect();
 	return false;
-}
-
-async function getVotes(room_id: RoomId, access_token: string): Promise<Vote[]> {
-	const res = await fetch(`${env.API_URL}/api/room/${room_id}/music/voted`, {
-		headers: {
-			Authorization: `Bearer ${access_token}`
-		}
-	});
-
-	if (!res.ok) {
-		const message = res.statusText;
-		const detail = await res.text();
-		throw error(res.status, { message, detail });
-	}
-
-	return (await res.json()) as Vote[];
 }
 
 function storeUserToken(access_token: string) {

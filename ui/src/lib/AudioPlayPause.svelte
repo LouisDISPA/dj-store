@@ -17,15 +17,10 @@
 				player.pause();
 			}
 			audio_element.currentTime = 0;
-			audio_element.onpause = () => {
-				audio_element = audio_element;
-				button_element.classList.remove('swap-active');
-			};
+			audio_element.onpause = () => (audio_element = audio_element);
 			audio_element.play();
-			button_element.classList.add('swap-active');
 		} else {
 			audio_element.pause();
-			button_element.classList.remove('swap-active');
 		}
 	}
 </script>
@@ -33,17 +28,18 @@
 <button
 	bind:this={button_element}
 	class="btn btn-square btn-ghost swap swap-rotate w-16 h-16 md:w-20 md:h-20"
+	class:swap-active={!audio_element?.paused}
 	on:click={toogleAudio}
 >
 	{#if audio_element?.paused !== true}
-		<div class="radial-progress progress-animation" />
+		<div class="radial-progress text-white progress-animation" />
 	{/if}
 	<audio bind:this={audio_element} src={url} />
-	<svg class="swap-off w-12 h-12 stroke-white" viewBox="0 0 24 24">
+	<svg class="swap-off w-12 h-12 stroke-white fill-none" viewBox="0 0 24 24">
 		<circle class="fill-black stroke-transparent opacity-30" cx="12" cy="12" r="11" />
 		<path stroke-linecap="round" stroke-linejoin="round" d="M9 19l7-7-7-7" />
 	</svg>
-	<svg class="swap-on w-12 h-12 stroke-white" viewBox="0 0 24 24">
+	<svg class="swap-on w-12 h-12 stroke-white fill-none" viewBox="0 0 24 24">
 		<circle class="fill-black stroke-transparent opacity-60" cx="12" cy="12" r="11" />
 		<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
 	</svg>

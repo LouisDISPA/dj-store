@@ -10,7 +10,7 @@
 		--border-thickness: 3px;
 		--border-radius: 40%;
 		--border-offset: 5%;
-		--border-color: #cbf3f0;
+		--border-color: hsl(var(--p));
 	}
 	.scanner-border {
 		position: absolute;

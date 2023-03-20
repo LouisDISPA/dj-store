@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AudioPlayPause from './AudioPlayPause.svelte';
+	import Stack from './Stack.svelte';
 	import type { MusicId } from './types';
 
 	export let id: MusicId;
@@ -23,20 +24,20 @@
 </script>
 
 <td>
-	<div class="priv-stack">
-		{#if preview_url}
-			<AudioPlayPause url={preview_url} />
-		{/if}
-		<div class="avatar">
-			<div class="mask rounded-lg w-16 h-16 drop-shadow-sm md:w-20 md:h-20">
+	<Stack>
+		<div class="avatar shadow-md">
+			<div class="mask rounded-lg w-16 h-16 md:w-20 md:h-20">
 				{#if image_hash}
 					<img src={image_hash} alt="music poster" />
 				{:else}
-					<img src="https://via.placeholder.com/150" alt="music poster" />
+					<div class="w-16 h-16 md:w-20 md:h-20 bg-white opacity-5" />
 				{/if}
 			</div>
 		</div>
-	</div>
+		{#if preview_url}
+			<AudioPlayPause url={preview_url} />
+		{/if}
+	</Stack>
 </td>
 <td>
 	<div class="text-max text-sm opacity-50 truncate">{artist}</div>
@@ -63,27 +64,5 @@
 	.text-max {
 		width: 60vw;
 		max-width: 30rem;
-	}
-
-	.priv-stack > :global(*) {
-		display: grid;
-		grid-column-start: 1;
-		grid-row-start: 1;
-		align-content: center;
-		justify-items: center;
-	}
-
-	.priv-stack {
-		display: inline-grid;
-		place-items: center;
-		align-items: flex-end;
-	}
-
-	.priv-stack > :global(*):nth-child(1) {
-		z-index: 3;
-	}
-
-	.priv-stack > :global(*):nth-child(2) {
-		z-index: 2;
 	}
 </style>

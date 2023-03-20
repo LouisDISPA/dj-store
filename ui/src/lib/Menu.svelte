@@ -28,7 +28,7 @@
 	$: menu_items = menu_basic.concat($auth?.role === 'Admin' ? menu_logged : menu_not_logged);
 </script>
 
-<ul class={'menu ' + (direction === 'horizontal' ? 'menu-horizontal' : '')}>
+<ul class="menu" class:menu-horizontal={direction === 'horizontal'}>
 	{#each menu_items as item}
 		<li>
 			<button
