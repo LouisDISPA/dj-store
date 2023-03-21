@@ -13,6 +13,8 @@
 	function submit() {
 		if (onSubmit) onSubmit();
 	}
+	// because of the way daisyui works, we need to add the btn- prefix to the file
+	// btn-neutral btn-primary btn-secondary btn-accent btn-ghost btn-error
 </script>
 
 <button

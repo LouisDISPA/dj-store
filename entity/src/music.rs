@@ -6,7 +6,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "music")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64, // TODO: fix this
+    pub id: i64, // fix this (when deezer api is changed)
     pub title: String,
     pub artist: String,
     pub preview_url: Option<String>,

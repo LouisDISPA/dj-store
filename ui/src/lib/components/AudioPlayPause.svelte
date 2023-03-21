@@ -27,7 +27,7 @@
 
 <button
 	bind:this={button_element}
-	class="btn btn-square btn-ghost swap swap-rotate w-16 h-16 md:w-20 md:h-20"
+	class="btn btn-ghost swap swap-rotate w-16 h-16 md:w-20 md:h-20"
 	class:swap-active={!audio_element?.paused}
 	on:click={toogleAudio}
 >

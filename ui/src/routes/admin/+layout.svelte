@@ -15,7 +15,7 @@
 			</p>
 		</span>
 		<span slot="actions">
-			<Button label="Home" type="secondary" onSubmit={() => goto('/')} />
+			<Button label="Home" type="neutral" onSubmit={() => goto('/')} />
 			<Button label="Login" type="primary" onSubmit={() => goto('/login')} />
 		</span>
 	</Modal>

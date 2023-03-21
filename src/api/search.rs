@@ -106,7 +106,7 @@ pub async fn get_music_or_store_music(
     music_id: u64,
 ) -> Result<music::Model, DbErr> {
     let music = music::Entity::find()
-        .filter(music::Column::Id.eq(music_id as i64)) // TODO: fix this
+        .filter(music::Column::Id.eq(music_id as i64)) // fix this (when deezer api is changed)
         .one(&state.db)
         .await?;
 
@@ -122,7 +122,7 @@ pub async fn get_music_or_store_music(
                     DbErr::Custom(e.to_string())
                 })?;
             let music = music::ActiveModel {
-                id: Set(music_id as i64), // TODO: fix this
+                id: Set(music_id as i64), // fix this (when deezer api is changed)
                 title: Set(tract.title),
                 artist: Set(tract.artist.name),
                 preview_url: Set(Some(tract.preview)),

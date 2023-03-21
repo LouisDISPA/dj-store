@@ -34,12 +34,8 @@ async fn main() {
         .expect("Failed to migrate database");
 
     let api = api::router(db);
-
-    // #[cfg(not(feature = "embed-ui"))]
     let api = utils::cors::init(api);
-
     let app = Router::new().nest("/api", api);
-
     #[cfg(feature = "embed-ui")]
     let app = ui::mount(app);
 
