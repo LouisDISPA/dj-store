@@ -13,7 +13,7 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
     let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
