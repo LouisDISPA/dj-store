@@ -42,6 +42,7 @@ migration = { path = "migration" }
 
 # static link openssl
 # https://docs.rs/openssl/latest/openssl/#vendored
+# openssl is used by deezer-rs (surf)
 openssl-sys = { version = "*", features = ["vendored"] }
 
 [features]
