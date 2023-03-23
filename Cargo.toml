@@ -40,7 +40,17 @@ deezer-rs = { git = "https://github.com/tsirysndr/deezer-rs" }
 entity = { path = "entity" }
 migration = { path = "migration" }
 
+# static link openssl
+# https://docs.rs/openssl/latest/openssl/#vendored
+openssl-sys = { version = "*", features = ["vendored"] }
 
 [features]
 default = ["embed-ui"]
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
+
+# TODO: fix caching with cargo-chef when optimizing
+# or not cache for docker build
+# [profile.release]
+# strip = true
+# lto = true
+# codegen-units = 1
