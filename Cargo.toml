@@ -13,6 +13,7 @@ members = [".", "entity", "migration"]
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.6.11", features = ["headers", "ws"] }
 tower-http = { version = "0.4", features = ["cors", "trace"] }
+axum-server = { version = "0.4", default-features = false, features = ["tls-rustls"], optional = true}
 
 rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
@@ -48,6 +49,7 @@ openssl-sys = { version = "*", features = ["vendored"] }
 [features]
 default = ["embed-ui"]
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
+https = ["dep:axum-server"]
 
 # TODO: fix caching with cargo-chef when optimizing
 # or not cache for docker build

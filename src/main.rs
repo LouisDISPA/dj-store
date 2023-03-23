@@ -6,6 +6,9 @@ use migration::MigratorTrait;
 use sea_orm::Database;
 use tokio::signal;
 
+#[cfg(feature = "https")]
+use axum_server::tls_rustls::RustlsConfig;
+
 mod api;
 #[cfg(feature = "embed-ui")]
 mod ui;
@@ -46,12 +49,53 @@ async fn main() {
         .parse()
         .unwrap();
 
-    info!("Listening on http://{}", addr);
+    #[cfg(not(feature = "https"))]
+    let server = axum::Server::bind(&addr).serve(app.into_make_service());
 
+    #[cfg(feature = "https")]
+    let server = run_https_server(addr, app);
+
+    info!("Listening on http://{}", addr);
     tokio::select! {
         _ = signal::ctrl_c() => {
             info!("Shutting down");
         },
-        _ = axum::Server::bind(&addr).serve(app.into_make_service()) => {},
+        _ = server => {},
     }
+}
+
+// --- this is just for the https server ---
+
+#[cfg(feature = "https")]
+use std::net::SocketAddr;
+
+#[cfg(feature = "https")]
+async fn run_https_server(addr: SocketAddr, app: Router) {
+    match (env::var("CERT_PATH").ok(), env::var("KEY_PATH").ok()) {
+        (Some(cert_path), Some(key_path)) => {
+            info!(
+                "Using TLS certificate '{}' and key {}'",
+                cert_path, key_path
+            );
+
+            let config = RustlsConfig::from_pem_file(cert_path, key_path)
+                .await
+                .expect("Failed to load TLS certificate");
+
+            axum_server::bind_rustls(addr, config)
+                .serve(app.into_make_service())
+                .await
+                .ok();
+        }
+        (None, None) => {
+            info!("No TLS certificate provided, using HTTP");
+
+            axum::Server::bind(&addr)
+                .serve(app.into_make_service())
+                .await
+                .ok();
+        }
+        (None, Some(_)) => panic!("Missing CERT_PATH env var"),
+        (Some(_), None) => panic!("Missing KEY_PATH env var"),
+    };
 }
