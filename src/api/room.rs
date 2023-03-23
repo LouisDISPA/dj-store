@@ -214,8 +214,8 @@ pub struct Music {
     id: i64, // fix this (when deezer api is changed)
     title: String,
     artist: String,
-    preview_url: String,
-    image_hash: String,
+    preview_url: Option<String>,
+    image_hash: Option<String>,
     votes: u32,
 }
 
@@ -270,6 +270,7 @@ pub async fn get_musics(
             music::Column::PreviewUrl,
             music::Column::ImageHash,
         ])
+        .and_where(music::Column::Id.is_not_null())
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .group_by_col(music::Column::Id)
         .from_subquery(all_votes, vote::Entity)
@@ -284,14 +285,14 @@ pub async fn get_musics(
 
     let backend = state.db.get_database_backend();
 
-    return Music::find_by_statement(backend.build(&statement))
+    Music::find_by_statement(backend.build(&statement))
         .all(&state.db)
         .await
         .map(Json::from)
         .map_err(|e| {
             log::error!("Failed to get musics: {}", e);
             GetMusicError::InternalError
-        });
+        })
 }
 
 pub async fn get_music_detail(

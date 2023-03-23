@@ -45,7 +45,7 @@ impl FromStr for RoomID {
         let mut id = 0;
         for (i, c) in s.chars().rev().enumerate() {
             // check if the character is between A and Z
-            if ('A'..='Z').contains(&c) {
+            if c.is_ascii_uppercase() {
                 // convert the character to a number
                 let num = c as u32 - 'A' as u32;
                 // add the number to the id

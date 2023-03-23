@@ -161,14 +161,6 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Vote::UserToken).uuid().not_null())
                     .col(ColumnDef::new(Vote::MusicId).unsigned().not_null())
-                    .foreign_key(
-                        ForeignKey::create()
-                            .from_tbl(Vote::Table)
-                            .from_col(Vote::MusicId)
-                            .to_tbl(Music::Table)
-                            .to_col(Music::Id)
-                            .on_delete(ForeignKeyAction::Cascade),
-                    )
                     .col(
                         ColumnDef::new(Vote::VoteDate)
                             .date_time()
