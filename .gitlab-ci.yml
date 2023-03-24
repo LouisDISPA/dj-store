@@ -7,13 +7,6 @@ stages:
 lint_ui:
   stage: lint
   image: node:18
-  # TODO: install a personal gitlab runner to enable cache
-  # cache:
-  #   - key:
-  #       files:
-  #         - ui/yarn.lock
-  #     paths:
-  #       - ui/node_modules/
   script:
     - cd ui/
     - yarn
@@ -25,22 +18,38 @@ pages:
   image: node:18
   needs: 
     - lint_ui 
+  variables:
+    VITE_BASE_HREF: '/dj-store'
+    VITE_API_URL: 'https://dj-store.louis-dispa.fr'
   script:
     - cd ui/
     - yarn
-    - export VITE_BASE_HREF="/dj-store" && export VITE_API_URL="http://34.155.186.32" && yarn build
+    - yarn build
     - cp -r build/* ../public
   artifacts:
     paths:
       - public
 
-# lint_server:
-#   stage: lint
-#   image: rust:latest
-#   script:
-#     - rustup component add clippy rustfmt
-#     - cargo clippy -- -D warnings
-#     - cargo fmt -- --check
+lint_server:
+  stage: lint
+  image: rust:latest
+  script:
+    - rustup component add clippy rustfmt
+    - cargo clippy -- -D warnings
+    - cargo fmt -- --check
+
+build_container:
+  image: docker:20.10.16
+  stage: build
+  needs:
+    - lint_server
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    IMAGE_TAG_LATEST: $CI_REGISTRY_IMAGE:latest
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG -t $IMAGE_TAG_LATEST .
+    - docker push $IMAGE_TAG
 
 # build_server:
 #   stage: build

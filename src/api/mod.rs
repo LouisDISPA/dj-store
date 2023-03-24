@@ -3,7 +3,6 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use sea_orm::DatabaseConnection;
 use tower_http::trace::TraceLayer;
 
 use self::state::ApiState;
@@ -13,15 +12,11 @@ mod room;
 mod search;
 mod websocket;
 
-mod state;
-
-pub use admin::set_admin_info;
+pub mod state;
 
 pub type MusicId = u64;
 
-pub fn router(db: DatabaseConnection) -> Router {
-    let state = state::ApiState::init(db);
-
+pub fn router(state: ApiState) -> Router {
     Router::<ApiState>::new()
         .layer(TraceLayer::new_for_http())
         .route("/admin/login", post(admin::login))

@@ -1,5 +1,3 @@
-use std::env;
-
 use axum::Router;
 use log::info;
 use migration::{Migrator, MigratorTrait};
@@ -8,6 +6,8 @@ use tokio::signal;
 #[cfg(feature = "https")]
 use utils::https::run_https_server;
 use utils::required_env;
+
+use crate::api::state::ApiState;
 
 mod api;
 #[cfg(feature = "embed-ui")]
@@ -24,8 +24,9 @@ async fn main() {
     let admin_username = required_env("ADMIN_USERNAME");
     let admin_password = required_env("ADMIN_PASSWORD_HASH");
 
+    // JWT secret should be in the state
+    // just keeping it like this because why not
     utils::jwt::set_jwt_secret(&jwt_secret);
-    api::set_admin_info(admin_username, admin_password);
 
     let db = Database::connect(db_adress)
         .await
@@ -35,7 +36,9 @@ async fn main() {
         .await
         .expect("Failed to migrate database");
 
-    let api = api::router(db);
+    let state = ApiState::init(db, admin_username, admin_password);
+
+    let api = api::router(state);
     let api = utils::cors::init(api);
     let app = Router::new().nest("/api", api);
     #[cfg(feature = "embed-ui")]

@@ -1,4 +1,4 @@
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use argon2::{Argon2, PasswordVerifier};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -45,18 +45,21 @@ impl IntoResponse for LoginError {
     }
 }
 
-pub async fn login(Json(body): Json<LoginBody>) -> Result<Json<UserToken>, LoginError> {
+pub async fn login(
+    State(state): State<ApiState>,
+    Json(body): Json<LoginBody>,
+) -> Result<Json<UserToken>, LoginError> {
     let username = body.username;
     let password = body.password;
 
-    let admin = get_admin_info();
+    let admin = state.admin_info.clone();
 
     let result = tokio::task::spawn_blocking(move || {
         Argon2::default().verify_password(password.expose_secret().as_bytes(), &admin.password)
     })
     .await;
 
-    if admin.username != username || result.is_err() {
+    if state.admin_info.username != username || result.is_err() {
         return Err(LoginError::InvalidCredentials);
     }
 
@@ -240,29 +243,4 @@ pub async fn delete_room(
             Err(DeleteRoomsError::InternalError)
         }
     }
-}
-
-struct AdminInfo {
-    username: String,
-    password: PasswordHash<'static>,
-}
-
-static mut ADMIN_INFO: Option<AdminInfo> = None;
-
-pub fn set_admin_info(username: String, password: String) {
-    let password = Box::leak(password.into_boxed_str());
-    let password = PasswordHash::new(password).expect("Failed to hash password");
-
-    // This is safe because ADMIN_INFO is only initialized once at the start of the program
-    unsafe {
-        if ADMIN_INFO.is_some() {
-            panic!("JWT_SECRET is already set");
-        }
-        ADMIN_INFO = Some(AdminInfo { username, password });
-    }
-}
-
-fn get_admin_info() -> &'static AdminInfo {
-    // This is safe because ADMIN_INDO is only initialized once at the start of the program
-    unsafe { ADMIN_INFO.as_ref().expect("JWT secret not set") }
 }
