@@ -7,9 +7,7 @@ lint_ui:
   stage: lint
   image: node:18
   cache:
-    - key:
-        files:
-          - ui/yarn.lock
+    - key: 'yarn_cache_dj'
       paths:
         - ui/node_modules/
   script:
@@ -24,9 +22,7 @@ pages:
   needs: 
     - lint_ui 
   cache:
-    - key:
-        files:
-          - ui/yarn.lock
+    - key: 'yarn_cache_dj'
       paths:
         - ui/node_modules/
   variables:
@@ -44,6 +40,10 @@ pages:
 lint_server:
   stage: lint
   image: rust:latest
+  cache:
+    - key: 'cargo_cache_dj'
+      paths:
+        - target/
   script:
     - rustup component add clippy rustfmt
     - cargo clippy -- -D warnings
@@ -60,9 +60,5 @@ build_container:
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
     IMAGE_TAG_LATEST: $CI_REGISTRY_IMAGE:latest
     DOCKER_TLS_CERTDIR: "/certs"
-  before_script:
-    - docker info
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_DEPLOY_PASSWORD $CI_REGISTRY
     - docker build -t $IMAGE_TAG -t $IMAGE_TAG_LATEST .
-    - docker push $IMAGE_TAG
