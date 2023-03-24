@@ -44,6 +44,7 @@ lint_server:
     - key: 'cargo_cache_dj'
       paths:
         - target/
+        - ~/.cargo/
   script:
     - rustup component add clippy rustfmt
     - cargo clippy -- -D warnings
