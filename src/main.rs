@@ -2,12 +2,12 @@ use std::env;
 
 use axum::Router;
 use log::info;
-use migration::MigratorTrait;
+use migration::{Migrator, MigratorTrait};
 use sea_orm::Database;
 use tokio::signal;
-
 #[cfg(feature = "https")]
-use axum_server::tls_rustls::RustlsConfig;
+use utils::https::run_https_server;
+use utils::required_env;
 
 mod api;
 #[cfg(feature = "embed-ui")]
@@ -19,11 +19,10 @@ async fn main() {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    let db_adress = env::var("DATABASE_URL").expect("Missing DATABASE_URL env var");
-    let jwt_secret = env::var("JWT_SECRET").expect("Missing JWT_SECRET env var");
-    let admin_username = env::var("ADMIN_USERNAME").expect("Missing ADMIN_USERNAME env var");
-    let admin_password =
-        env::var("ADMIN_PASSWORD_HASH").expect("Missing ADMIN_PASSWORD_HASH env var");
+    let db_adress = required_env("DATABASE_URL");
+    let jwt_secret = required_env("JWT_SECRET");
+    let admin_username = required_env("ADMIN_USERNAME");
+    let admin_password = required_env("ADMIN_PASSWORD_HASH");
 
     utils::jwt::set_jwt_secret(&jwt_secret);
     api::set_admin_info(admin_username, admin_password);
@@ -32,7 +31,7 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
-    migration::Migrator::up(&db, None)
+    Migrator::up(&db, None)
         .await
         .expect("Failed to migrate database");
 
@@ -62,40 +61,4 @@ async fn main() {
         },
         _ = server => {},
     }
-}
-
-// --- this is just for the https server ---
-
-#[cfg(feature = "https")]
-use std::net::SocketAddr;
-
-#[cfg(feature = "https")]
-async fn run_https_server(addr: SocketAddr, app: Router) {
-    match (env::var("CERT_PATH").ok(), env::var("KEY_PATH").ok()) {
-        (Some(cert_path), Some(key_path)) => {
-            info!(
-                "Using TLS certificate '{}' and key {}'",
-                cert_path, key_path
-            );
-
-            let config = RustlsConfig::from_pem_file(cert_path, key_path)
-                .await
-                .expect("Failed to load TLS certificate");
-
-            axum_server::bind_rustls(addr, config)
-                .serve(app.into_make_service())
-                .await
-                .ok();
-        }
-        (None, None) => {
-            info!("No TLS certificate provided, using HTTP");
-
-            axum::Server::bind(&addr)
-                .serve(app.into_make_service())
-                .await
-                .ok();
-        }
-        (None, Some(_)) => panic!("Missing CERT_PATH env var"),
-        (Some(_), None) => panic!("Missing KEY_PATH env var"),
-    };
 }

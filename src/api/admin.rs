@@ -171,27 +171,22 @@ pub async fn create_room(
     }
 
     // Create the room in the database
-    match room
-        .to_active_model()
+    room.to_active_model()
         .save(&state.db)
         .await
         .and_then(room::ActiveModel::try_into_model)
         .map(GetRoom::from)
-    {
-        Ok(room) => Ok(Json(room)),
-        Err(DbErr::Exec(RuntimeErr::SqlxError(err)))
+        .map(Json)
+        .map_err(|err| {
+            log::error!("Failed to create room '{}': {}", room.id, err);
             // Ugly line to get the error code from sqlx and check if it's a duplicate key error
-            if err.as_database_error()
-                .and_then(|e| e.code())
-                .as_deref() == Some("2067") => {
-            log::error!("Failed to create room '{}': already exist", err);
-            Err(CreateRoomsError::RoomIdAlreadyExists)
-        }
-        Err(e) => {
-            log::error!("Failed to create room '{}': {}", room.id, e);
-            Err(CreateRoomsError::InternalError)
-        }
-    }
+            if let DbErr::Exec(RuntimeErr::SqlxError(err)) = err {
+                if err.as_database_error().and_then(|e| e.code()).as_deref() == Some("2067") {
+                    return CreateRoomsError::RoomIdAlreadyExists;
+                }
+            }
+            CreateRoomsError::InternalError
+        })
 }
 
 #[derive(Error, Display, Debug)]
