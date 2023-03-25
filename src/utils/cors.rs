@@ -4,18 +4,20 @@ use axum::{
     http::{header, HeaderValue, Method},
     Router,
 };
-use log::info;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
+/// Initialize CORS middleware.
+///
+/// If the CORS_ALLOWED_ORIGINS environment variable is set, the server will use CORS.
 pub fn init(app: Router) -> Router {
     if let Ok(var) = env::var("CORS_ALLOWED_ORIGINS") {
         let origins = parse_allow_origin(&var);
         let methods = vec![Method::GET, Method::POST, Method::DELETE];
         let headers = [header::AUTHORIZATION, header::CONTENT_TYPE];
 
-        info!("CORS allowed origins: {:?}", origins);
-        info!("CORS allowed methods: {:?}", methods);
-        info!("CORS allowed headers: {:?}", headers);
+        log::info!("CORS allowed origins: {:?}", origins);
+        log::info!("CORS allowed methods: {:?}", methods);
+        log::info!("CORS allowed headers: {:?}", headers);
 
         app.layer(
             CorsLayer::new()
@@ -24,7 +26,7 @@ pub fn init(app: Router) -> Router {
                 .allow_headers(headers),
         )
     } else {
-        info!("CORS disabled");
+        log::info!("CORS disabled");
         app
     }
 }

@@ -1,11 +1,9 @@
 use axum::Router;
-use log::info;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::Database;
 use tokio::signal;
 #[cfg(feature = "https")]
 use utils::https::run_https_server;
-use utils::required_env;
 
 use crate::api::state::ApiState;
 
@@ -19,10 +17,12 @@ async fn main() {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    let db_adress = required_env("DATABASE_URL");
-    let jwt_secret = required_env("JWT_SECRET");
-    let admin_username = required_env("ADMIN_USERNAME");
-    let admin_password = required_env("ADMIN_PASSWORD_HASH");
+    required_envs!(
+        db_adress => "DATABASE_URL"
+        jwt_secret => "JWT_SECRET"
+        admin_username => "ADMIN_USERNAME"
+        admin_password => "ADMIN_PASSWORD_HASH"
+    );
 
     // JWT secret should be in the state
     // just keeping it like this because why not
@@ -57,10 +57,10 @@ async fn main() {
     #[cfg(feature = "https")]
     let server = run_https_server(addr, app);
 
-    info!("Listening on http://{}", addr);
+    log::info!("Listening on http://{}", addr);
     tokio::select! {
         _ = signal::ctrl_c() => {
-            info!("Shutting down");
+            log::info!("Shutting down");
         },
         _ = server => {},
     }

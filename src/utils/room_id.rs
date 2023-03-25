@@ -6,16 +6,33 @@ use std::{
 use thiserror::Error;
 
 /// The room identifier.
+///
+/// The room ID is a 6 upper cased character long string.
+/// Example: `ABCDEF`, `BBBBBB`, `AAAAAA`
+///
+/// To convert a string to a room ID, use the `FromStr` trait.
+/// To convert a room ID to a string, use the `Display` trait.
+///
+/// ```
+/// # use utils::room_id::RoomID;
+/// let room_id: RoomID = "ABCDEF".parse().unwrap();
+/// let room_str = room_id.to_string();
+///
+/// assert_eq!(room_str, "ABCDEF");
+/// ```
+///
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RoomID {
     value: u32,
 }
 
 impl RoomID {
+    /// Create a new room ID from a number.
     pub fn new(value: u32) -> Self {
         Self { value }
     }
 
+    /// Get the value of the room ID.
     pub fn value(&self) -> u32 {
         self.value
     }
@@ -54,7 +71,7 @@ impl FromStr for RoomID {
                 return Err(InvalidChar);
             }
         }
-        Ok(RoomID { value: id })
+        Ok(RoomID::new(id))
     }
 }
 
