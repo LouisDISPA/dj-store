@@ -2,9 +2,12 @@
 # This container is used to generate a cargo chef recipe
 # which is used to cache dependencies for the rust backend
 
-FROM clux/muslrust:stable AS chef
-USER root
-RUN cargo install cargo-chef
+# TODO: Use this docker compose also for the aarch64 build
+
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+RUN apt-get update
+RUN apt-get install -y musl-tools upx
+RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /app
 
 # --- Generate the cargo chef recipe ---
@@ -39,18 +42,17 @@ COPY --from=ui-builder /app/build ./ui/build
 COPY src ./src
 COPY entity ./entity
 COPY migration ./migration
+COPY deezer-rs ./deezer-rs
 COPY Cargo* ./
 
 RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN upx --lzma --best /app/target/x86_64-unknown-linux-musl/release/dj-store
 
 # --- Build the final image ---
 # This image is from scratch and only contains the binary
-# It also needs ssl certificates for curl to work
 
 FROM scratch AS runtime
 
-# Copy the ssl certificates from the builder image and the binary
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/dj-store /
 
 ENV DATABASE_URL=sqlite://db.sqlite

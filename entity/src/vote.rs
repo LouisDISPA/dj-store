@@ -9,7 +9,7 @@ pub struct Model {
     pub id: u32,
     pub user_token: Uuid,
     pub room_id: u32,
-    pub music_id: i64, // fix this (when deezer api is changed)
+    pub music_id: i64,
     pub vote_date: DateTimeUtc,
     pub like: bool,
 }

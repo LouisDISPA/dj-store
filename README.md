@@ -1,6 +1,5 @@
 # DJ Store
 
-DJ Store is an application of music recommendation where people can vote for songs they want to hear.
-
-TODO: fix the u64 issue with sqlite and deezer api
-Use a custom deezer api client to get only the data needed
+DJ-store is an application that allows DJs to get recommendations from people on the dancefloor.
+The idea is simple: dancers can scan a QR code and vote for the songs they want to hear.
+The DJ can then use this feedback to adjust their playlist.

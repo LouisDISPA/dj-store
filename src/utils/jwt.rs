@@ -9,6 +9,7 @@ use displaydoc::Display;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 use super::room_id::RoomID;
@@ -137,7 +138,8 @@ struct JwtKeyPair {
     decoder: DecodingKey,
 }
 
-static mut JWT_SECRET: Option<JwtKeyPair> = None;
+// TODO: use std::sync::OnceCell when it becomes stable
+static JWT_SECRET: OnceCell<JwtKeyPair> = OnceCell::const_new();
 
 /// Set the JWT secret. This should only be called once at the start of the program.
 ///
@@ -151,14 +153,14 @@ pub fn set_jwt_secret(secret: &str) {
     let secret_bytes = secret.as_bytes();
 
     // This is safe because JWT_SECRET is only initialized once at the start of the program
-    unsafe {
-        if JWT_SECRET.is_some() {
-            panic!("JWT_SECRET is already set");
-        }
-        JWT_SECRET = Some(JwtKeyPair {
-            encoder: EncodingKey::from_secret(secret_bytes),
-            decoder: DecodingKey::from_secret(secret_bytes),
-        });
+
+    let res = JWT_SECRET.set(JwtKeyPair {
+        encoder: EncodingKey::from_secret(secret_bytes),
+        decoder: DecodingKey::from_secret(secret_bytes),
+    });
+
+    if res.is_err() {
+        panic!("JWT_SECRET is already set");
     }
 }
 
@@ -169,7 +171,7 @@ pub fn set_jwt_secret(secret: &str) {
 /// Panics if the secret is not set.
 fn get_jwt_encoder() -> &'static EncodingKey {
     // This is safe because JWT_SECRET is only initialized once at the start of the program
-    unsafe { &JWT_SECRET.as_ref().expect("JWT secret not set").encoder }
+    &JWT_SECRET.get().expect("JWT secret not set").encoder
 }
 
 /// Get the JWT decoder key. This should only be called after the secret is set.
@@ -179,5 +181,5 @@ fn get_jwt_encoder() -> &'static EncodingKey {
 /// Panics if the secret is not set.
 fn get_jwt_decoder() -> &'static DecodingKey {
     // This is safe because JWT_SECRET is only initialized once at the start of the program
-    unsafe { &JWT_SECRET.as_ref().expect("JWT secret not set").decoder }
+    &JWT_SECRET.get().expect("JWT secret not set").decoder
 }

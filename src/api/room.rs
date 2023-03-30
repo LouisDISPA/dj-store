@@ -138,7 +138,7 @@ impl VoteBody {
         vote::ActiveModel {
             user_token: Set(user_token),
             room_id: Set(room_id),
-            music_id: Set(self.music_id as i64), // fix this (when deezer api is changed)
+            music_id: Set(self.music_id),
             like: Set(self.like),
             ..Default::default()
         }
@@ -194,7 +194,7 @@ pub async fn vote(
 
     if let Some(room) = rooms.get(&room_id) {
         room.send(VoteEvent {
-            music_id: music.id as u64, // fix this (when deezer api is changed)
+            music_id: music.id,
             like: vote.like,
         })
         .map_err(|e| {
@@ -211,7 +211,7 @@ pub async fn vote(
 // a column name is generated from the struct field name
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct Music {
-    id: i64, // fix this (when deezer api is changed)
+    id: i64,
     title: String,
     artist: String,
     preview_url: Option<String>,
@@ -308,7 +308,7 @@ pub async fn get_music_detail(
         .select_only()
         .column_as(vote::Column::VoteDate.max(), "vote_date")
         .column(vote::Column::Like)
-        .filter(vote::Column::MusicId.eq(music_id as i64)) // fix this (when deezer api is changed)
+        .filter(vote::Column::MusicId.eq(music_id))
         .filter(vote::Column::RoomId.eq(room_id.value()))
         .left_join(music::Entity)
         .group_by(vote::Column::UserToken)
@@ -325,7 +325,7 @@ pub async fn get_music_detail(
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .from_subquery(all_votes, vote::Entity)
         .from(music::Entity)
-        .and_where(music::Column::Id.eq(music_id as i64)) // fix this (when deezer api is changed)
+        .and_where(music::Column::Id.eq(music_id))
         .take();
 
     let backend = state.db.get_database_backend();

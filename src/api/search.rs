@@ -29,7 +29,7 @@ pub struct SearchMusic {
     pub artist: String,
     pub preview_url: Option<String>,
     pub image_hash: Option<String>,
-    pub id: u64,
+    pub id: i64,
 }
 
 impl From<Track> for SearchMusic {
@@ -103,10 +103,10 @@ pub async fn search(
 
 pub async fn get_music_or_store_music(
     state: &ApiState,
-    music_id: u64,
+    music_id: i64,
 ) -> Result<music::Model, DbErr> {
     let music = music::Entity::find()
-        .filter(music::Column::Id.eq(music_id as i64)) // fix this (when deezer api is changed)
+        .filter(music::Column::Id.eq(music_id))
         .one(&state.db)
         .await?;
 
@@ -122,7 +122,7 @@ pub async fn get_music_or_store_music(
                     DbErr::Custom(e.to_string())
                 })?;
             let music = music::ActiveModel {
-                id: Set(music_id as i64), // fix this (when deezer api is changed)
+                id: Set(music_id),
                 title: Set(tract.title),
                 artist: Set(tract.artist.name),
                 preview_url: Set(Some(tract.preview)),

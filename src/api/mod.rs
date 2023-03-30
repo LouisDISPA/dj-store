@@ -14,7 +14,7 @@ mod websocket;
 
 pub mod state;
 
-pub type MusicId = u64;
+pub type MusicId = i64;
 
 pub fn router(state: ApiState) -> Router {
     Router::<ApiState>::new()

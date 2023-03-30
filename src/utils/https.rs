@@ -25,14 +25,15 @@ pub async fn run_https_server(addr: SocketAddr, app: Router) {
                 key_path
             );
 
-            let config = RustlsConfig::from_pem_file(cert_path, key_path)
-                .await
-                .expect("Failed to load TLS certificate");
-
-            axum_server::bind_rustls(addr, config)
-                .serve(app.into_make_service())
-                .await
-                .ok();
+            if let Ok(config) = RustlsConfig::from_pem_file(cert_path, key_path).await {
+                axum_server::bind_rustls(addr, config)
+                    .serve(app.into_make_service())
+                    .await
+                    .ok();
+            } else {
+                eprintln!("Failed to load TLS certificate");
+                std::process::exit(1);
+            }
         }
         (None, None) => {
             log::info!("No TLS certificate provided, using HTTP");
