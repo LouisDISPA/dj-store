@@ -42,11 +42,7 @@ lint_server:
   image: rust:latest
   variables:
     CARGO_HOME: "./.cargo"
-  cache:
-    - key: 'cargo_cache_dj'
-      paths:
-        - target/
-        - .cargo/
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
     - rustup component add clippy rustfmt
     - cargo clippy -- -D warnings
