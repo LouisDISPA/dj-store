@@ -2,12 +2,9 @@
 # This container is used to generate a cargo chef recipe
 # which is used to cache dependencies for the rust backend
 
-# TODO: Use this docker compose also for the aarch64 build
-
 FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 RUN apt-get update
 RUN apt-get install -y musl-tools upx
-RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /app
 
 # --- Generate the cargo chef recipe ---
@@ -32,9 +29,15 @@ RUN yarn build
 # --- Build the backend ---
 
 FROM chef AS builder 
+
+# Install musl target
+# TODO: Use this docker compose also for the aarch64 build
+ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-musl"
+RUN rustup target add ${CARGO_BUILD_TARGET}
+
 # Cache dependencies with cargo chef
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
 # Copy the ui build
 COPY --from=ui-builder /app/build ./ui/build
@@ -45,15 +48,15 @@ COPY migration ./migration
 COPY deezer-rs ./deezer-rs
 COPY Cargo* ./
 
-RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN upx --lzma --best /app/target/x86_64-unknown-linux-musl/release/dj-store
+RUN cargo build --release
+RUN mv /app/target/${CARGO_BUILD_TARGET}/release/dj-store /dj-store
+RUN upx --lzma --best /dj-store
 
 # --- Build the final image ---
 # This image is from scratch and only contains the binary
 
 FROM scratch AS runtime
-
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/dj-store /
+COPY --from=builder /dj-store /
 
 ENV DATABASE_URL=sqlite://db.sqlite
 
