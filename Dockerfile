@@ -2,9 +2,10 @@
 # This container is used to generate a cargo chef recipe
 # which is used to cache dependencies for the rust backend
 
-FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
-RUN apt-get update
-RUN apt-get install -y musl-tools upx
+FROM rust:alpine AS chef
+RUN apk add --no-cache musl-dev
+RUN cargo install cargo-chef
+RUN apk add --no-cache upx
 WORKDIR /app
 
 # --- Generate the cargo chef recipe ---
@@ -30,11 +31,6 @@ RUN yarn build
 
 FROM chef AS builder 
 
-# Install musl target
-# TODO: Use this docker compose also for the aarch64 build
-ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-musl"
-RUN rustup target add ${CARGO_BUILD_TARGET}
-
 # Cache dependencies with cargo chef
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -49,7 +45,7 @@ COPY deezer-rs ./deezer-rs
 COPY Cargo* ./
 
 RUN cargo build --release
-RUN mv /app/target/${CARGO_BUILD_TARGET}/release/dj-store /dj-store
+RUN mv /app/target/release/dj-store /dj-store
 RUN upx --lzma --best /dj-store
 
 # --- Build the final image ---

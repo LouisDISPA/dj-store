@@ -22,7 +22,7 @@ pub struct ApiState {
 }
 
 impl ApiState {
-    pub fn init(db: DatabaseConnection, admin_username: String, password_hash: String) -> Self {
+    pub fn new(db: DatabaseConnection, admin_username: String, password_hash: String) -> Self {
         let client = Deezer::new();
         let admin_info = AdminInfo::new(admin_username, password_hash);
 

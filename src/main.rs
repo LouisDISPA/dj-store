@@ -2,8 +2,6 @@ use axum::Router;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::Database;
 use tokio::signal;
-#[cfg(feature = "https")]
-use utils::https::run_https_server;
 
 use crate::api::state::ApiState;
 
@@ -36,7 +34,7 @@ async fn main() {
         .await
         .expect("Failed to migrate database");
 
-    let state = ApiState::init(db, admin_username, admin_password);
+    let state = ApiState::new(db, admin_username, admin_password);
 
     let api = api::router(state);
     let api = utils::cors::init(api);
@@ -55,7 +53,7 @@ async fn main() {
     let server = axum::Server::bind(&addr).serve(app.into_make_service());
 
     #[cfg(feature = "https")]
-    let server = run_https_server(addr, app);
+    let server = utils::https::run_https_server(addr, app);
 
     log::info!("Listening on http://{}", addr);
     tokio::select! {
