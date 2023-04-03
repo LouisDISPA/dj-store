@@ -187,21 +187,12 @@ pub async fn vote(
             VoteError::InternalError
         })?;
 
-    let rooms = state.rooms_channels.read().map_err(|e| {
-        log::error!("Failed to get read lock on rooms: {}", e);
-        VoteError::InternalError
-    })?;
+    let event = VoteEvent {
+        music_id: music.id,
+        like: vote.like,
+    };
 
-    if let Some(room) = rooms.get(&room_id) {
-        room.send(VoteEvent {
-            music_id: music.id,
-            like: vote.like,
-        })
-        .map_err(|e| {
-            log::error!("Failed to send vote to room: {}", e);
-            VoteError::InternalError
-        })?;
-    }
+    state.rooms_channels.send_vote(room_id, event);
 
     Ok(())
 }

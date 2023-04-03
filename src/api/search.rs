@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use entity::{music, room};
-use sea_orm::{prelude::*, Set};
+use sea_orm::{prelude::*, IntoActiveModel};
 
 use crate::utils::{
     jwt::{Role, User},
@@ -25,11 +25,11 @@ pub struct SearchRequest {
 
 #[derive(Serialize, Deserialize)]
 pub struct SearchMusic {
+    pub id: i64,
     pub title: String,
     pub artist: String,
     pub preview_url: Option<String>,
     pub image_hash: Option<String>,
-    pub id: i64,
 }
 
 impl From<Track> for SearchMusic {
@@ -39,7 +39,19 @@ impl From<Track> for SearchMusic {
             title: music.title,
             artist: music.artist.name,
             preview_url: Some(music.preview),
-            image_hash: music.album.map(|album| album.cover_medium),
+            image_hash: music.md5_image,
+        }
+    }
+}
+
+impl From<SearchMusic> for music::Model {
+    fn from(music: SearchMusic) -> Self {
+        Self {
+            id: music.id,
+            title: music.title,
+            artist: music.artist,
+            preview_url: music.preview_url,
+            image_hash: music.image_hash,
         }
     }
 }
@@ -88,7 +100,8 @@ pub async fn search(
         .ok_or(SearchError::RoomNotFound)?;
 
     let response = state
-        .search_client
+        .deezer_client
+        .search()
         .get_tracks(&request.query)
         .await
         .map_err(|e| {
@@ -113,21 +126,18 @@ pub async fn get_music_or_store_music(
     match music {
         Some(music) => Ok(music),
         None => {
-            let tract = state
-                .tracks_client
+            let music = state
+                .deezer_client
+                .track()
                 .get(&music_id.to_string())
                 .await
+                .map(SearchMusic::from)
+                .map(music::Model::from)
                 .map_err(|e| {
                     log::error!("Failed to get music: {}", e);
                     DbErr::Custom(e.to_string())
                 })?;
-            let music = music::ActiveModel {
-                id: Set(music_id),
-                title: Set(tract.title),
-                artist: Set(tract.artist.name),
-                preview_url: Set(Some(tract.preview)),
-                image_hash: Set(tract.album.map(|album| album.cover_medium)), // TODO: make custom deezer client
-            };
+            let music = music.into_active_model();
             music.insert(&state.db).await
         }
     }

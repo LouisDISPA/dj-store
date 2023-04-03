@@ -21,6 +21,10 @@
 			votes += is_voted ? 1 : -1;
 		}
 	}
+
+	$: image_url = image_hash?.startsWith('http')
+		? image_hash
+		: `https://e-cdns-images.dzcdn.net/images/cover/${image_hash}/150x150-000000-80-0-0.jpg`;
 </script>
 
 <td>
@@ -28,7 +32,7 @@
 		<div class="avatar shadow-md">
 			<div class="mask rounded-lg w-16 h-16 md:w-20 md:h-20">
 				{#if image_hash}
-					<img src={image_hash} alt="music poster" />
+					<img src={image_url} alt="music poster" />
 				{:else}
 					<div class="w-16 h-16 md:w-20 md:h-20 bg-white opacity-5" />
 				{/if}

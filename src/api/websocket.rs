@@ -11,12 +11,15 @@ use axum::{
 };
 // use deku::{DekuContainerWrite, DekuUpdate, DekuWrite};
 use serde::Serialize;
-use tokio::{select, sync::broadcast::Receiver, time::timeout};
+use tokio::{select, time::timeout};
 
 use crate::utils::jwt::{self, Role};
 use crate::utils::room_id::RoomID;
 
-use super::{state::ApiState, MusicId};
+use super::{
+    state::{ApiState, ReceiverGuard},
+    MusicId,
+};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct VoteEvent {
@@ -33,23 +36,14 @@ pub async fn handle_request(
     //
     // user: User,
     Path(room_id): Path<RoomID>,
-) -> Result<Response, (StatusCode, String)> {
-    let mut rooms = state
-        .rooms_channels
-        .write()
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
-
-    let room = rooms.entry(room_id).or_insert_with(|| {
-        let (sender, _) = tokio::sync::broadcast::channel(100);
-        sender
-    });
-    let receiver = room.subscribe();
-    drop(rooms);
-
-    Ok(ws.on_upgrade(move |socket| handle_room_websocket(socket, receiver)))
+) -> Result<Response, (StatusCode, &'static str)> {
+    match state.rooms_channels.subscribe(room_id) {
+        Some(receiver) => Ok(ws.on_upgrade(move |socket| handle_room_websocket(socket, receiver))),
+        None => Err((StatusCode::NOT_FOUND, "Room not found")),
+    }
 }
 
-async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receiver<VoteEvent>) {
+async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: ReceiverGuard) {
     // Check the first message is an admin auth token
     let future = timeout(Duration::from_secs(3), socket.recv());
     match future.await {
