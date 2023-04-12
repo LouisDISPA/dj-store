@@ -2,6 +2,7 @@ use axum::Router;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::Database;
 use tokio::signal;
+use tower_http::trace::TraceLayer;
 
 use crate::api::state::ApiState;
 
@@ -37,6 +38,7 @@ async fn main() {
     let state = ApiState::new(db, admin_username, admin_password);
 
     let api = api::router(state);
+    let api = api.layer(TraceLayer::new_for_http());
     let api = utils::cors::init(api);
     let app = Router::new().nest("/api", api);
     #[cfg(feature = "embed-ui")]

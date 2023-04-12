@@ -39,7 +39,11 @@
 	let room_id = '';
 
 	async function onCreate() {
-		const room = await createRoom(auth_token, room_id ?? randomRoomID(), nowPlus({ days: 1 }));
+		const room = await createRoom(
+			auth_token,
+			room_id === '' ? randomRoomID() : room_id,
+			nowPlus({ days: 1 })
+		);
 		rooms?.push(room);
 		rooms = rooms;
 		room_id = '';
