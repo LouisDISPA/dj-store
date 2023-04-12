@@ -72,13 +72,13 @@
 				const room_id = data.split('/').pop();
 				if (room_id) {
 					joinRoom(room_id)
+						.then(() => goto(data))
 						.catch((err) => {
 							console.error(err);
 							alert('Could not connect to room');
 							video.play();
 							setTimeout(startCapturing, 750);
-						})
-						.then(() => goto(data));
+						});
 				}
 			}
 		}
