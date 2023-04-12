@@ -9,14 +9,13 @@
 	import { auth } from '$lib/auth';
 	import { onMount } from 'svelte';
 	import Hero from '$lib/components/Hero.svelte';
+	import TextInput from '$lib/components/TextInput.svelte';
 
 	let rooms: Room[] | undefined;
 	let roomUrl: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
-
-	const header = ['ID', 'Users', 'Expires', 'Created', 'Actions'];
 
 	onMount(pageLoad);
 
@@ -37,27 +36,31 @@
 		roomUrl = undefined;
 	}
 
+	let room_id = '';
+
 	async function onCreate() {
-		const room = await createRoom(auth_token, randomRoomID(), nowPlus({ days: 1 }));
+		const room = await createRoom(auth_token, room_id ?? randomRoomID(), nowPlus({ days: 1 }));
 		rooms?.push(room);
 		rooms = rooms;
+		room_id = '';
 	}
 </script>
 
-<div class="grid-cols-1">
-	{#if rooms !== undefined}
-		<Table {header}>
-			{#each rooms as room}
-				<RoomTile {...room} {onDelete} {onShare} />
-			{/each}
-		</Table>
-		<Button label="Create Room" type="primary" onSubmit={onCreate} />
-	{:else}
-		<Hero>
-			<h1 class="text-5xl font-bold">Loading...</h1>
-		</Hero>
-	{/if}
-	{#if roomUrl}
-		<QrCodePopup url={roomUrl} onClose={closeShare} />
-	{/if}
-</div>
+{#if rooms !== undefined}
+	<div class="flex flex-wrap gap-4 m-2">
+		{#each rooms as room}
+			<RoomTile {...room} {onDelete} {onShare} />
+		{/each}
+	</div>
+	<div class="flex flex-wrap items-end m-4 gap-2">
+		<TextInput bind:value={room_id} label="Room ID" />
+		<Button label="Create Room" type="primary" onSubmit={onCreate} no_marging />
+	</div>
+{:else}
+	<Hero>
+		<h1 class="text-5xl font-bold">Loading...</h1>
+	</Hero>
+{/if}
+{#if roomUrl}
+	<QrCodePopup url={roomUrl} onClose={closeShare} />
+{/if}

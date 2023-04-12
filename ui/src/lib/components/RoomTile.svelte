@@ -12,22 +12,16 @@
 	export let onShare: ((id: RoomId) => void) | undefined = undefined;
 </script>
 
-<tr {id}>
-	<td>
-		<div class="font-bold">{id}</div>
-	</td>
-	<td>
-		<div class="text-sm opacity-50">{user_count}</div>
-	</td>
-	<td>
-		<div class="text-sm opacity-50">{timeFormat.format(expiration)}</div>
-	</td>
-	<td>
-		<div class="text-sm opacity-50">{timeFormat.format(creation)}</div>
-	</td>
-	<td>
-		<Button label="GoTo" type="primary" onSubmit={() => goto(`admin/r/${id}`)} />
-		<Button label="Share" type="primary" onSubmit={() => onShare?.(id)} />
-		<Button label="Delete" type="error" onSubmit={() => onDelete?.(id)} />
-	</td>
-</tr>
+<div class="card w-96 bg-base-100 shadow-xl">
+	<div class="card-body">
+		<h2 class="card-title">{id}</h2>
+		<p>Creation: {timeFormat.format(creation)}</p>
+		<p>Expiration: {timeFormat.format(expiration)}</p>
+		<p>Users: {user_count}</p>
+		<div class="card-actions justify-end">
+			<Button label="GoTo" type="primary" onSubmit={() => goto(`admin/r/${id}`)} />
+			<Button label="Share" type="primary" onSubmit={() => onShare?.(id)} />
+			<Button label="Delete" type="error" onSubmit={() => onDelete?.(id)} />
+		</div>
+	</div>
+</div>
