@@ -253,7 +253,7 @@ pub async fn get_musics(
         .group_by(vote::Column::MusicId)
         .into_query();
 
-    let statement = Query::select()
+    let mut statement = Query::select()
         .columns([
             music::Column::Title,
             music::Column::Artist,
@@ -273,6 +273,10 @@ pub async fn get_musics(
         .and_having(Expr::col(Alias::new("votes")).gt(0))
         .order_by(Alias::new("votes"), Order::Desc)
         .take();
+
+    if user.role != Role::Admin {
+        statement.limit(10);
+    }
 
     let backend = state.db.get_database_backend();
 
