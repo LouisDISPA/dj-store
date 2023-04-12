@@ -21,7 +21,7 @@
 	<Modal>
 		<span slot="body">
 			<div class="p-6 mx-3 bg-white rounded-xl">
-				<canvas bind:this={canvas} />
+				<canvas class="w-full" bind:this={canvas} />
 			</div>
 			<h3 class="text-sm text-center pt-4 pb-3">{url}</h3>
 		</span>
