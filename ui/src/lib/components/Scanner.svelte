@@ -5,6 +5,7 @@
 	import jsQR from 'jsqr';
 	import Spinner from './Spinner.svelte';
 	import Stack from './Stack.svelte';
+	import { joinRoom } from '$lib/auth';
 
 	let video: HTMLVideoElement;
 	let canvas: HTMLCanvasElement;
@@ -68,7 +69,17 @@
 				setTimeout(startCapturing, 750);
 				return;
 			} else {
-				goto(data);
+				const room_id = data.split('/').pop();
+				if (room_id) {
+					joinRoom(room_id)
+						.catch((err) => {
+							console.error(err);
+							alert('Could not connect to room');
+							video.play();
+							setTimeout(startCapturing, 750);
+						})
+						.then(() => goto(data));
+				}
 			}
 		}
 	};
