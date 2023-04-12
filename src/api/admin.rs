@@ -57,11 +57,18 @@ pub async fn login(
     let result = tokio::task::spawn_blocking(move || {
         Argon2::default().verify_password(password.expose_secret().as_bytes(), &admin.password)
     })
-    .await;
+    .await
+    .map_err(|_| {
+        log::error!("Failed to spawn blocking task to verify password");
+        LoginError::InvalidCredentials
+    })?;
 
     if state.admin_info.username != username || result.is_err() {
+        log::warn!("Invalid credentials for admin login");
         return Err(LoginError::InvalidCredentials);
     }
+
+    log::info!("Admin '{}' logged in", username);
 
     Ok(Json(User::new_admin().into()))
 }
