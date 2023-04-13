@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
 	import RoomTile from '$lib/components/RoomTile.svelte';
-	import Table from '$lib/components/Table.svelte';
 	import QrCodePopup from '$lib/components/QrCodePopup.svelte';
 	import { env, nowPlus, randomRoomID } from '$lib/utils';
 	import type { Room, RoomId } from '$lib/types';
