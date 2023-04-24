@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use displaydoc::Display;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
@@ -70,7 +70,9 @@ pub async fn login(
 
     log::info!("Admin '{}' logged in", username);
 
-    Ok(Json(User::new_admin().into()))
+    Ok(Json(
+        User::new_admin().into_token(Utc::now() + Duration::days(1)),
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]

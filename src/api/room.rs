@@ -6,6 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use chrono::Utc;
 use displaydoc::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -29,6 +30,8 @@ pub enum JoinError {
     RoomNotFound,
     /// The room is full.
     RoomFull,
+    /// The room is closed
+    RoomExpired,
     /// Internal error.
     InternalError,
 }
@@ -38,6 +41,7 @@ impl IntoResponse for JoinError {
         let status = match self {
             JoinError::RoomNotFound => StatusCode::NOT_FOUND,
             JoinError::RoomFull => StatusCode::UNAUTHORIZED,
+            JoinError::RoomExpired => StatusCode::UNAUTHORIZED,
             JoinError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
@@ -57,18 +61,21 @@ pub async fn join(
     sleep(Duration::from_secs(1)).await;
 
     // Check if the room public id already exists
-    let room_exists = room::Entity::find()
+    let room = room::Entity::find()
         .filter(room::Column::PublicId.eq(room_id.value()))
         .one(&state.db)
         .await
         .map_err(|e| {
             log::error!("Failed to check if room exists: {}", e);
             JoinError::InternalError
-        })?
-        .is_some();
+        })?;
 
-    if !room_exists {
+    let Some(room) = room else {
         return Err(JoinError::RoomNotFound);
+    };
+
+    if room.expiration_date < Utc::now() {
+        return Err(JoinError::RoomExpired);
     }
 
     let row_affected = room::Entity::update_many()
@@ -89,7 +96,9 @@ pub async fn join(
 
     match row_affected {
         0 => Err(JoinError::RoomFull),
-        1 => Ok(Json(User::new_user(room_id).into())),
+        1 => Ok(Json(
+            User::new_user(room_id).into_token(room.expiration_date),
+        )),
         _ => {
             log::error!(
                 "More than one Room was update ({}): User join -> user_count + 1",

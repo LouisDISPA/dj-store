@@ -4,7 +4,7 @@ use axum::{
     http::{request::Parts, StatusCode},
     RequestPartsExt, TypedHeader,
 };
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Utc};
 use displaydoc::Display;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
@@ -50,10 +50,10 @@ pub struct UserToken {
     token_type: &'static str,
 }
 
-impl From<User> for UserToken {
-    fn from(user: User) -> Self {
-        let token = sign(user);
-        Self {
+impl User {
+    pub fn into_token(self, exp: DateTime<Utc>) -> UserToken {
+        let token = sign(self, exp);
+        UserToken {
             access_token: token,
             token_type: "Bearer",
         }
@@ -86,6 +86,10 @@ impl<S: Send + Sync> FromRequestParts<S> for User {
 pub enum JwtVerifyError {
     /// The JWT is invalid: {0}
     InvalidJwt(String),
+    /// JWT Token not valid yet
+    IssuedAtAfterNow,
+    /// JWT Token expired
+    Expired,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -97,9 +101,8 @@ pub struct Claims {
 }
 
 impl Claims {
-    pub fn new(user: User) -> Self {
+    pub fn new(user: User, exp: DateTime<Utc>) -> Self {
         let iat = Utc::now();
-        let exp = iat + Duration::hours(24);
 
         Self {
             user,
@@ -109,8 +112,13 @@ impl Claims {
     }
 }
 
-pub fn sign(user: User) -> String {
-    jsonwebtoken::encode(&Header::default(), &Claims::new(user), get_jwt_encoder()).unwrap()
+pub fn sign(user: User, exp: DateTime<Utc>) -> String {
+    jsonwebtoken::encode(
+        &Header::default(),
+        &Claims::new(user, exp),
+        get_jwt_encoder(),
+    )
+    .unwrap()
 }
 
 pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
@@ -121,9 +129,10 @@ pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
     };
     let now = Utc::now().timestamp();
     if claim.iat > now {
-        return Err(JwtVerifyError::InvalidJwt(
-            "Token is not valid yet".to_string(),
-        ));
+        return Err(JwtVerifyError::IssuedAtAfterNow);
+    }
+    if claim.exp < now {
+        return Err(JwtVerifyError::Expired);
     }
     Ok(claim.user)
 }

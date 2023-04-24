@@ -10,6 +10,7 @@
 	}
 
 	function onKeypress(event: KeyboardEvent) {
+		onChange(event);
 		if (event.key === 'Enter') onSubmit?.(value);
 	}
 </script>
