@@ -4,16 +4,15 @@
 	import { goto } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { auth, disconnect, joinRoom } from '$lib/auth';
-	import { page } from '$app/stores';
 	import Modal from '$lib/components/Modal.svelte';
 
 	let input = '';
 	let loading = false;
-	let error: string | null = $page.url.searchParams.get('error');
+	let error: string | undefined;
 
 	if (error) {
 		setTimeout(() => {
-			error = null;
+			error = undefined;
 		}, 3000);
 		goto('/');
 	}
@@ -31,7 +30,7 @@
 			loading = false;
 			error = "Couldn't connect to room";
 			setTimeout(() => {
-				error = null;
+				error = undefined;
 			}, 3000);
 		}
 		loading = false;

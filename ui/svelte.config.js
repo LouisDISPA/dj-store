@@ -11,7 +11,7 @@ const config = {
 
 	kit: {
 		adapter: adapter({
-			fallback: 'index.html'
+			fallback: 'fallback.html'
 		}),
 		paths: {
 			base: process.env.VITE_BASE_HREF || ''

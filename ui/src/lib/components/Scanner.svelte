@@ -34,6 +34,8 @@
 				return goto('/');
 			});
 
+		// Use the promise to ensure that the stream is stoppped
+		// even if the component is unmounted before the stream is ready
 		return () => stream.then(stopMediaStream);
 	}
 

@@ -22,8 +22,7 @@ jsonwebtoken = { version = "8.3.0", default-features = false }
 secrecy = { version = "0.8.0", features = ["serde"] }
 argon2 = { version = "0.5.0", features = ["std"] }
 
-rust-embed = { version = "6", features = ["axum"], optional = true}
-mime_guess = { version = "2", optional = true}
+rust-embed = { version = "6", features = ["mime-guess"], optional = true}
 
 sea-orm = { version = "0.11.0", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 serde = { version = "1", features = ["derive"] }
@@ -48,7 +47,7 @@ migration = { path = "migration" }
 
 [features]
 default = ["embed-ui"]
-embed-ui = ["dep:rust-embed", "dep:mime_guess"]
+embed-ui = ["dep:rust-embed"]
 https = ["dep:axum-server"]
 
 # TODO: fix caching with cargo-chef when optimizing

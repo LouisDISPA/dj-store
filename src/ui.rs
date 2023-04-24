@@ -1,48 +1,59 @@
 use axum::{
     body::{boxed, Full},
-    http::{header, StatusCode, Uri},
+    extract::Path,
+    http::{header, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, Router},
 };
 use rust_embed::RustEmbed;
 
 pub fn mount(app: Router) -> Router {
-    app.route("/_app/*file", get(static_handler))
-        .route("/favicon.png", get(favicon_handler))
-        .fallback(index_handler)
+    app.route("/", get(index_handler))
+        .route("/*path", get(file_handler))
 }
 
-// We use static route matchers ("/" and "/index.html") to serve our home
-// page.
 async fn index_handler() -> impl IntoResponse {
     asset("index.html")
 }
 
-async fn favicon_handler() -> impl IntoResponse {
-    asset("favicon.png")
-}
-
-async fn static_handler(uri: Uri) -> impl IntoResponse {
-    asset(uri.path().trim_start_matches('/'))
+async fn file_handler(Path(mut path): Path<String>) -> impl IntoResponse {
+    // if there is no extension, assume html
+    if path.rfind('.').is_none() {
+        path.push_str(".html");
+    }
+    asset(&path)
 }
 
 #[derive(RustEmbed)]
 #[folder = "ui/build/"]
 struct Asset;
 
+// TODO: cache control
+
 fn asset(path: &str) -> Response {
     match Asset::get(path) {
         Some(content) => {
             let body = boxed(Full::from(content.data));
-            let mime = mime_guess::from_path(path).first_or_octet_stream();
             Response::builder()
-                .header(header::CONTENT_TYPE, mime.as_ref())
+                .header(header::CONTENT_TYPE, content.metadata.mimetype())
+                .header(header::CACHE_CONTROL, "max-age=86400")
                 .body(body)
                 .unwrap()
         }
-        None => Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(boxed(Full::from("404 whaat")))
-            .unwrap(),
+        None => match Asset::get("fallback.html") {
+            Some(content) => {
+                let body = boxed(Full::from(content.data));
+                Response::builder()
+                    .status(StatusCode::NOT_FOUND)
+                    .header(header::CONTENT_TYPE, content.metadata.mimetype())
+                    .header(header::CACHE_CONTROL, "max-age=86400")
+                    .body(body)
+                    .unwrap()
+            }
+            None => Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(boxed(Full::from("404 whaat")))
+                .unwrap(),
+        },
     }
 }
