@@ -30,7 +30,7 @@ pub enum JoinError {
     RoomNotFound,
     /// The room is full.
     RoomFull,
-    /// The room is closed
+    /// The room is closed.
     RoomExpired,
     /// Internal error.
     InternalError,
