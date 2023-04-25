@@ -38,7 +38,7 @@ impl User {
 
     pub fn new_admin() -> Self {
         Self {
-            uid: Uuid::new_v4(),
+            uid: Uuid::from_u128(0), // TODO: should it be a secret?
             role: Role::Admin,
         }
     }

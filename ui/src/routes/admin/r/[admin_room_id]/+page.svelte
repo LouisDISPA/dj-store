@@ -16,7 +16,7 @@
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
 	const auth_token = $auth?.access_token as string;
-	const room_id = $page.params.room_id as string;
+	const room_id = $page.params.admin_room_id as string;
 
 	const interval = setInterval(async () => {
 		musics = await getMusics(auth_token, room_id);

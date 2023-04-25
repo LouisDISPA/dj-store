@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { writable, type Writable } from 'svelte/store';
-import { getVotes } from './client';
+import { get, writable, type Writable } from 'svelte/store';
 import type { RoomId } from './types';
 import { env } from './utils';
 
@@ -50,6 +49,10 @@ async function connect(username: string, password: string) {
 }
 
 async function joinRoom(room_id: RoomId) {
+	// If the user is already in the room or is an admin, do nothing
+	const current_auth = get(auth);
+	if (current_auth?.room_id === room_id || current_auth?.role === 'Admin') return;
+
 	disconnect();
 	const res = await fetch(`${env.API_URL}/api/room/${room_id}/join`);
 
@@ -69,11 +72,9 @@ async function joinRoom(room_id: RoomId) {
 }
 
 async function tryRecallUser() {
-	console.log('Try recall user');
 	const access_token = localStorage.getItem(TOKEN_STORAGE_KEY);
 	if (!access_token) {
 		disconnect();
-		console.log('No token to recall');
 		return false;
 	}
 	const token_data = decodeToken(access_token);
@@ -81,34 +82,15 @@ async function tryRecallUser() {
 	const expiration = token_data.exp * 1000;
 	if (expiration < Date.now()) {
 		disconnect();
-		console.log('Token recalled expired');
 		return false;
 	}
 
 	const role = token_data.role as Role;
+	const room_id = token_data.room_id as string | undefined;
 
-	if (role === 'Admin') {
-		console.log('Admin recalled');
-		auth.set({ access_token, role });
-		return true;
-	}
-
-	if (role === 'User') {
-		const room_id = token_data.room_id as string;
-
-		try {
-			await getVotes(access_token, room_id);
-			console.log('User recalled');
-			auth.set({ access_token, role, room_id });
-			return true;
-		} catch (e) {
-			disconnect();
-			return false;
-		}
-	}
-
-	disconnect();
-	return false;
+	storeUserToken(access_token);
+	auth.set({ access_token, role, room_id });
+	return true;
 }
 
 function storeUserToken(access_token: string) {

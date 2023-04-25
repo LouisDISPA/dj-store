@@ -2,7 +2,8 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
-	import { getMusics, getSearch, voteForMusic, voted_for } from '$lib/client';
+	import { getMusics, getSearch, getVotes } from '$lib/client';
+	import { voteForMusic, voted_for } from '$lib/client';
 	import Hero from '$lib/components/Hero.svelte';
 	import MusicTile from '$lib/components/MusicTile.svelte';
 	import Search from '$lib/components/Search.svelte';
@@ -16,11 +17,13 @@
 	let error: string | undefined;
 
 	// Since the authentification is done in the layout, we can assume that the user is authenticated
-	// TODO: use context instead of stores
 	const auth_token = $auth?.access_token as string;
 	const room_id = $page.params.room_id as string;
 
-	onMount(loadMusic);
+	onMount(() => {
+		getVotes(auth_token, room_id);
+		loadMusic();
+	});
 
 	async function loadMusic() {
 		musics = await getMusics(auth_token, room_id);
