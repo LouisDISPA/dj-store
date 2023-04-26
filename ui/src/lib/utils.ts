@@ -3,7 +3,7 @@ import type { Room } from './types';
 
 export const env = {
 	BASE_HREF: import.meta.env.VITE_BASE_HREF || '',
-	API_URL: import.meta.env.VITE_API_URL || window.location.origin
+	API_URL: import.meta.env.VITE_API_URL || ''
 };
 
 export async function goto(path: string) {
