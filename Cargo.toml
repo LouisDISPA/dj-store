@@ -5,7 +5,7 @@ edition = "2021"
 build = "src/build.rs"
 
 [workspace]
-members = [".", "entity", "migration", "deezer-rs"]
+members = [".", "entity", "migration", "deezer-rs", "api-macro"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -39,11 +39,7 @@ deezer-rs = { path = "deezer-rs" }
 
 entity = { path = "entity" }
 migration = { path = "migration" }
-
-# static link openssl
-# https://docs.rs/openssl/latest/openssl/#vendored
-# openssl is used by deezer-rs (surf)
-# openssl-sys = { version = "*", features = ["vendored"] }
+api-macro = { path = "api-macro" }
 
 [features]
 default = ["embed-ui"]

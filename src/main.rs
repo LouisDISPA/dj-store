@@ -23,8 +23,7 @@ async fn main() {
         admin_password => "ADMIN_PASSWORD_HASH"
     );
 
-    // JWT secret should be in the state
-    // just keeping it like this because why not
+    // JWT secret should be in the state ?
     utils::jwt::set_jwt_secret(&jwt_secret);
 
     let db = Database::connect(db_adress)
