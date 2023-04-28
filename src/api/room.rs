@@ -24,20 +24,16 @@ use crate::utils::room_id::RoomID;
 
 use super::{search::get_music_or_store_music, state::ApiState, websocket::VoteEvent, MusicId};
 
-#[derive(api_macro::ApiError, Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[api_macro::error]
+#[default_status(StatusCode::UNAUTHORIZED)]
 pub enum JoinError {
     /// The room does not exist.
     #[status(StatusCode::NOT_FOUND)]
     RoomNotFound,
     /// The room is full.
-    #[status(StatusCode::UNAUTHORIZED)]
     RoomFull,
     /// The room is closed.
-    #[status(StatusCode::UNAUTHORIZED)]
     RoomExpired,
-    /// Internal error.
-    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
-    InternalError,
 }
 
 pub async fn join(
