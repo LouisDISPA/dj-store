@@ -2,13 +2,44 @@ use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, ExprLit, Lit, Meta,
-    MetaNameValue, Path,
+    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, ExprLit, Lit, Meta, Path,
 };
 
+// TODO: clean the code
+// TODO: add positional arguments ? similar to displaydoc
+
+/// Implements `IntoResponse` for an enum, where each variant has a status code
+/// and the response body is the last doc comment or the variant name.
+///
+/// Attributes:
+/// - `status`: the status code for the variant
+/// - `default_status`: the default status code for all variants (if no `status` attribute is present)
+///
+/// # Example
+///
+/// ```rust
+/// # use api_macro::ApiError;
+/// # use axum::http::StatusCode;
+/// # use axum::response::IntoResponse;
+/// #
+/// #[derive(ApiError)]
+/// #[default_status(StatusCode::INTERNAL_SERVER_ERROR)]
+/// pub enum SearchError {
+///     /// Room is not found
+///     #[status(StatusCode::UNAUTHORIZED)]
+///     RoomNotFound,
+///     InternalError,
+/// }
+///
+/// let response = SearchError::RoomNotFound.into_response();
+/// assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+///
+/// let response = SearchError::InternalError.into_response();
+/// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+/// ```
+///
 #[proc_macro_derive(ApiError, attributes(status, default_status, with_internal_error))]
 pub fn api_error(input: TokenStream) -> TokenStream {
-    // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let Data::Enum(DataEnum { variants, ..}) = input.data else {
@@ -27,13 +58,12 @@ pub fn api_error(input: TokenStream) -> TokenStream {
         find_doc(&variant.attrs).unwrap_or_else(|| variant.ident.to_string().to_case(Case::Title))
     });
 
-    // Build the output, possibly using quasi-quotation
     let expanded = quote! {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
                 match self {
-                    #( #name::#names => (#status, #docs),)*
-                }.into_response()
+                    #( #name::#names => (#status, #docs).into_response(),)*
+                }
             }
         }
     };
@@ -44,11 +74,11 @@ pub fn api_error(input: TokenStream) -> TokenStream {
 
 fn find_doc(attributes: &[Attribute]) -> Option<String> {
     for attr in attributes {
-        if let Meta::NameValue(MetaNameValue { path, value, .. }) = &attr.meta {
-            if path.is_ident("doc") {
+        if let Meta::NameValue(name_value) = &attr.meta {
+            if name_value.path.is_ident("doc") {
                 if let Expr::Lit(ExprLit {
                     lit: Lit::Str(lit), ..
-                }) = value
+                }) = &name_value.value
                 {
                     return Some(lit.value().trim().to_string());
                 }
@@ -71,6 +101,38 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
     None
 }
 
+/// Implements `IntoResponse` for an enum, where each variant has a status code
+/// and the response body is the last doc comment or the variant name.
+///
+/// The `error` macro is the same as the derive macro `ApiError`.
+///
+/// It can be used to add additional variants.
+///
+/// Attributes:
+/// - `internal_error`: add an `InternalError` variant with status code `INTERNAL_SERVER_ERROR`
+/// - `unauthorized`: add an `Unauthorized` variant with status code `UNAUTHORIZED`
+///
+/// # Example
+///
+/// ```rust
+/// # use api_macro::error;
+/// # use axum::http::StatusCode;
+/// # use axum::response::IntoResponse;
+/// #
+/// #[error(internal_error unauthorized)]
+/// enum SearchError {
+///     /// Room is not found
+///     #[status(StatusCode::UNAUTHORIZED)]
+///     RoomNotFound,
+/// }
+///
+/// let response = SearchError::InternalError.into_response();
+/// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+///
+/// let response = SearchError::Unauthorized.into_response();
+/// assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+/// ```
+///
 #[proc_macro_attribute]
 pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -87,30 +149,35 @@ pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
         panic!("ApiError can only be derived for enums");
     };
 
-    let mut internal_error = Some(quote!(
-        // Internal error.
-        #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
-        InternalError,
-    ));
+    let mut new_variants = vec![];
 
-    if macro_attrs
-        .into_iter()
-        .find(|test| &test.to_string() == "no_internal_error")
-        .is_some()
-    {
-        internal_error = None
+    for token in macro_attrs {
+        match token.to_string().as_str() {
+            "internal_error" => new_variants.push(quote!(
+                #[doc = "Internal error"]
+                #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
+                InternalError,
+            )),
+            "unauthorized" => new_variants.push(quote!(
+                #[doc = "Unauthorized"]
+                #[status(axum::http::status::StatusCode::UNAUTHORIZED)]
+                Unauthorized,
+            )),
+            token => panic!(
+                "Unknown token '{}', possible token: internal_error, unauthorized",
+                token
+            ),
+        }
     }
 
-    // Build the output, possibly using quasi-quotation
     let expanded = quote! {
         #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
         #(#attrs)*
         #vis enum #ident #generics {
             #variants
-            #internal_error
+            #(#new_variants)*
         }
     };
 
-    // Hand the output tokens back to the compiler
     TokenStream::from(expanded)
 }

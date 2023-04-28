@@ -10,3 +10,6 @@ convert_case = "0.6.0"
 
 [lib]
 proc-macro = true
+
+[dev-dependencies]
+axum = "0.6.17"

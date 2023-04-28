@@ -2,14 +2,11 @@ use argon2::{Argon2, PasswordVerifier};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
     Json,
 };
 use chrono::{DateTime, Duration, Utc};
-use displaydoc::Display;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use entity::*;
 use sea_orm::{prelude::*, ActiveValue::Set, TryIntoModel};
@@ -27,22 +24,11 @@ pub struct LoginBody {
     password: Secret<String>,
 }
 
-#[derive(Error, Display, Debug)]
+#[api_macro::error]
 pub enum LoginError {
-    /// The username or password is incorrect.
+    /// The username or password is incorrect
+    #[status(StatusCode::UNAUTHORIZED)]
     InvalidCredentials,
-}
-
-impl IntoResponse for LoginError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            LoginError::InvalidCredentials => StatusCode::UNAUTHORIZED,
-        };
-
-        let body = self.to_string();
-
-        (status, body).into_response()
-    }
 }
 
 pub async fn login(
@@ -94,26 +80,8 @@ impl From<room::Model> for GetRoom {
     }
 }
 
-#[derive(Error, Display, Debug)]
-pub enum GetRoomsError {
-    /// Unauthorized
-    Unauthorized,
-    /// Internal error
-    InternalError,
-}
-
-impl IntoResponse for GetRoomsError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            GetRoomsError::Unauthorized => StatusCode::UNAUTHORIZED,
-            GetRoomsError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        let body = self.to_string();
-
-        (status, body).into_response()
-    }
-}
+#[api_macro::error(internal_error unauthorized)]
+pub enum GetRoomsError {}
 
 pub async fn get_rooms(
     State(state): State<ApiState>,
@@ -149,28 +117,11 @@ impl CreateRoom {
     }
 }
 
-#[derive(Error, Display, Debug)]
+#[api_macro::error(internal_error unauthorized)]
 pub enum CreateRoomsError {
-    /// Unauthorized
-    Unauthorized,
     /// Room id already exists
+    #[status(StatusCode::CONFLICT)]
     RoomIdAlreadyExists,
-    /// Internal error
-    InternalError,
-}
-
-impl IntoResponse for CreateRoomsError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            CreateRoomsError::Unauthorized => StatusCode::UNAUTHORIZED,
-            CreateRoomsError::RoomIdAlreadyExists => StatusCode::CONFLICT,
-            CreateRoomsError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        let body = self.to_string();
-
-        (status, body).into_response()
-    }
 }
 
 pub async fn create_room(
@@ -201,28 +152,11 @@ pub async fn create_room(
         })
 }
 
-#[derive(Error, Display, Debug)]
+#[api_macro::error(internal_error unauthorized)]
 pub enum DeleteRoomsError {
-    /// Unauthorized
-    Unauthorized,
     /// Room id does not exist
+    #[status(StatusCode::NOT_FOUND)]
     RoomIdDoesNotExist,
-    /// Internal error
-    InternalError,
-}
-
-impl IntoResponse for DeleteRoomsError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            DeleteRoomsError::Unauthorized => StatusCode::UNAUTHORIZED,
-            DeleteRoomsError::RoomIdDoesNotExist => StatusCode::NOT_FOUND,
-            DeleteRoomsError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        let body = self.to_string();
-
-        (status, body).into_response()
-    }
 }
 
 pub async fn delete_room(

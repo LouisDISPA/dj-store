@@ -1,13 +1,10 @@
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
     Json,
 };
 use deezer_rs::track::Track;
-use displaydoc::Display;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use entity::{music, room};
 use sea_orm::{prelude::*, IntoActiveModel};
@@ -56,26 +53,11 @@ impl From<SearchMusic> for music::Model {
     }
 }
 
-#[derive(Error, Display, Debug)]
+#[api_macro::error(internal_error unauthorized)]
 pub enum SearchError {
     /// Room not found
+    #[status(StatusCode::UNAUTHORIZED)]
     RoomNotFound,
-    /// User not in room.
-    UserNotInRoom,
-    /// Internal error
-    InternalError,
-}
-
-impl IntoResponse for SearchError {
-    fn into_response(self) -> Response {
-        use SearchError::*;
-        let status = match self {
-            UserNotInRoom => StatusCode::UNAUTHORIZED,
-            RoomNotFound => StatusCode::UNAUTHORIZED,
-            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-        (status, self.to_string()).into_response()
-    }
 }
 
 // TODO: prevent user from searching too much
@@ -86,7 +68,7 @@ pub async fn search(
     user: User,
 ) -> Result<Json<Vec<SearchMusic>>, SearchError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-        return Err(SearchError::UserNotInRoom);
+        return Err(SearchError::Unauthorized);
     }
 
     room::Entity::find()

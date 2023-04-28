@@ -3,13 +3,10 @@ use std::time::Duration;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
     Json,
 };
 use chrono::Utc;
-use displaydoc::Display;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tokio::time::sleep;
 use uuid::Uuid;
 
@@ -24,15 +21,15 @@ use crate::utils::room_id::RoomID;
 
 use super::{search::get_music_or_store_music, state::ApiState, websocket::VoteEvent, MusicId};
 
-#[api_macro::error]
+#[api_macro::error(internal_error)]
 #[default_status(StatusCode::UNAUTHORIZED)]
 pub enum JoinError {
-    /// The room does not exist.
+    /// The room does not exist
     #[status(StatusCode::NOT_FOUND)]
     RoomNotFound,
-    /// The room is full.
+    /// The room is full
     RoomFull,
-    /// The room is closed.
+    /// The room is closed
     RoomExpired,
 }
 
@@ -94,31 +91,14 @@ pub async fn join(
     }
 }
 
-#[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[api_macro::error(internal_error unauthorized)]
 pub enum VoteError {
-    /// The user is not in the room.
-    UserNotInRoom,
-    /// The music does not exist.
+    /// The music does not exist
+    #[status(StatusCode::BAD_REQUEST)]
     MusicNotFound,
     /// Already voted for the music.
+    #[status(StatusCode::BAD_REQUEST)]
     AlreadyVoted,
-    /// Internal error.
-    InternalError,
-}
-
-impl IntoResponse for VoteError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            VoteError::UserNotInRoom => StatusCode::UNAUTHORIZED,
-            VoteError::AlreadyVoted => StatusCode::BAD_REQUEST,
-            VoteError::MusicNotFound => StatusCode::BAD_REQUEST,
-            VoteError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        let body = self.to_string();
-
-        (status, body).into_response()
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -146,7 +126,7 @@ pub async fn vote(
     Json(vote): Json<VoteBody>,
 ) -> Result<(), VoteError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-        return Err(VoteError::UserNotInRoom);
+        return Err(VoteError::Unauthorized);
     }
 
     let music = get_music_or_store_music(&state, vote.music_id)
@@ -204,28 +184,11 @@ pub struct Music {
     votes: u32,
 }
 
-#[derive(Error, Display, Debug)]
+#[api_macro::error(internal_error unauthorized)]
 pub enum GetMusicError {
-    /// User not in room.
-    UserNotInRoom,
-    /// Internal error.
-    InternalError,
-    /// Music not found.
+    /// Music not found
+    #[status(StatusCode::BAD_REQUEST)]
     MusicNotFound,
-}
-
-impl IntoResponse for GetMusicError {
-    fn into_response(self) -> Response {
-        use GetMusicError::*;
-
-        let status: StatusCode = match self {
-            UserNotInRoom => StatusCode::UNAUTHORIZED,
-            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            MusicNotFound => StatusCode::BAD_REQUEST,
-        };
-
-        (status, self.to_string()).into_response()
-    }
 }
 
 pub async fn get_musics(
@@ -234,7 +197,7 @@ pub async fn get_musics(
     user: User,
 ) -> Result<Json<Vec<Music>>, GetMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-        return Err(GetMusicError::UserNotInRoom);
+        return Err(GetMusicError::Unauthorized);
     }
 
     let all_votes = vote::Entity::find()
@@ -290,7 +253,7 @@ pub async fn get_music_detail(
     user: User,
 ) -> Result<Json<Music>, GetMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-        return Err(GetMusicError::UserNotInRoom);
+        return Err(GetMusicError::Unauthorized);
     }
 
     let all_votes = vote::Entity::find()
@@ -340,26 +303,8 @@ pub struct VotedMusic {
     like: bool,
 }
 
-#[derive(Error, Display, Debug)]
-pub enum GetVotedMusicError {
-    /// User not in room.
-    UserNotInRoom,
-    /// Internal error.
-    InternalError,
-}
-
-impl IntoResponse for GetVotedMusicError {
-    fn into_response(self) -> Response {
-        use GetVotedMusicError::*;
-
-        let status: StatusCode = match self {
-            UserNotInRoom => StatusCode::UNAUTHORIZED,
-            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        (status, self.to_string()).into_response()
-    }
-}
+#[api_macro::error(internal_error unauthorized)]
+pub enum GetVotedMusicError {}
 
 pub async fn get_voted_musics(
     State(state): State<ApiState>,
@@ -367,7 +312,7 @@ pub async fn get_voted_musics(
     user: User,
 ) -> Result<Json<Vec<VotedMusic>>, GetVotedMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
-        return Err(GetVotedMusicError::UserNotInRoom);
+        return Err(GetVotedMusicError::Unauthorized);
     }
 
     vote::Entity::find()
