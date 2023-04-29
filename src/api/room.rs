@@ -91,7 +91,7 @@ pub async fn join(
     }
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum VoteError {
     /// The music does not exist
     #[status(StatusCode::BAD_REQUEST)]
@@ -184,7 +184,7 @@ pub struct Music {
     votes: u32,
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum GetMusicError {
     /// Music not found
     #[status(StatusCode::BAD_REQUEST)]
@@ -303,7 +303,7 @@ pub struct VotedMusic {
     like: bool,
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum GetVotedMusicError {}
 
 pub async fn get_voted_musics(

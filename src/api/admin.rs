@@ -80,7 +80,7 @@ impl From<room::Model> for GetRoom {
     }
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum GetRoomsError {}
 
 pub async fn get_rooms(
@@ -117,7 +117,7 @@ impl CreateRoom {
     }
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum CreateRoomsError {
     /// Room id already exists
     #[status(StatusCode::CONFLICT)]
@@ -152,7 +152,7 @@ pub async fn create_room(
         })
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum DeleteRoomsError {
     /// Room id does not exist
     #[status(StatusCode::NOT_FOUND)]

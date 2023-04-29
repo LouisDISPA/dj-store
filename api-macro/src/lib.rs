@@ -1,10 +1,10 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, Attribute, Expr, ExprLit, ItemEnum, Lit, Meta, Path};
-
-// TODO: clean the code
-// TODO: add positional arguments ? similar to displaydoc
+use syn::{
+    parse, parse_macro_input, parse_quote, punctuated::Punctuated, Attribute, Expr, ExprLit, Ident,
+    ItemEnum, Lit, Meta, Path, Token,
+};
 
 /// Implements `IntoResponse` for an enum, where each variant has a status code
 /// and the response body is the last doc comment or the variant name.
@@ -48,7 +48,7 @@ pub fn api_error(input: TokenStream) -> TokenStream {
     let status = variants.iter().map(|variant| {
         find_status(&variant.attrs, "status")
             .or_else(|| default_status.clone())
-            .expect("Missing #[status(...)] attribute")
+            .unwrap_or_else(|| panic!("Missing status attribute for variant {}", variant.ident))
     });
     let docs = variants.iter().map(|variant| {
         find_doc(&variant.attrs).unwrap_or_else(|| variant.ident.to_string().to_case(Case::Title))
@@ -58,7 +58,10 @@ pub fn api_error(input: TokenStream) -> TokenStream {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
                 match self {
-                    #( #name::#names => (#status, #docs).into_response(),)*
+                    #(#name::#names => {
+                        log::warn!(#docs);
+                        (#status, #docs).into_response()
+                    },)*
                 }
             }
         }
@@ -68,8 +71,9 @@ pub fn api_error(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Finds the last doc comment in the attributes.
 fn find_doc(attributes: &[Attribute]) -> Option<String> {
-    for attr in attributes {
+    for attr in attributes.iter().rev() {
         if let Meta::NameValue(name_value) = &attr.meta {
             if name_value.path.is_ident("doc") {
                 if let Expr::Lit(ExprLit {
@@ -84,6 +88,7 @@ fn find_doc(attributes: &[Attribute]) -> Option<String> {
     None
 }
 
+/// Finds the status code in the attributes.
 fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
     for attr in attributes {
         if let Meta::List(list) = &attr.meta {
@@ -131,33 +136,69 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
 ///
 #[proc_macro_attribute]
 pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
+    let macro_attrs = parse_macro_input!(macro_attrs as Args);
     let mut input = parse_macro_input!(input as ItemEnum);
 
-    for token in macro_attrs {
-        match token.to_string().as_str() {
-            "internal_error" => input.variants.push(parse_quote!(
+    input
+        .variants
+        .extend(macro_attrs.variants.iter().map(ErrorVariant::to_variant));
+
+    let derive = parse_quote!(
+        #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    );
+
+    input.attrs.insert(0, derive);
+
+    TokenStream::from(quote!(#input))
+}
+
+/// The arguments for the `error` macro.
+struct Args {
+    variants: Punctuated<ErrorVariant, Token![,]>,
+}
+
+impl parse::Parse for Args {
+    fn parse(input: parse::ParseStream) -> parse::Result<Self> {
+        Ok(Self {
+            variants: Punctuated::parse_terminated(input)?,
+        })
+    }
+}
+
+/// The variants that can be added with the `error` macro.
+enum ErrorVariant {
+    InternalError,
+    Unauthorized,
+}
+
+impl ErrorVariant {
+    fn to_variant(&self) -> syn::Variant {
+        match self {
+            ErrorVariant::InternalError => parse_quote!(
                 #[doc = "Internal error"]
                 #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
                 InternalError
-            )),
-            "unauthorized" => input.variants.push(parse_quote!(
+            ),
+            ErrorVariant::Unauthorized => parse_quote!(
                 #[doc = "Unauthorized"]
                 #[status(axum::http::status::StatusCode::UNAUTHORIZED)]
                 Unauthorized
-            )),
-            token => panic!(
-                "Unknown token '{}', possible token: internal_error, unauthorized",
-                token
             ),
         }
     }
+}
 
-    input.attrs.insert(
-        0,
-        parse_quote!(
-            #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        ),
-    );
-
-    TokenStream::from(quote!(#input))
+impl parse::Parse for ErrorVariant {
+    fn parse(input: parse::ParseStream) -> parse::Result<Self> {
+        let ident = input.parse::<Ident>()?;
+        // is there a cleaner way to do this?
+        match ident.to_string().as_str() {
+            "internal_error" => Ok(ErrorVariant::InternalError),
+            "unauthorized" => Ok(ErrorVariant::Unauthorized),
+            _ => Err(parse::Error::new(
+                ident.span(),
+                "Unknown identifyer, possible: internal_error, unauthorized",
+            )),
+        }
+    }
 }

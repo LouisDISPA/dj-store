@@ -53,7 +53,7 @@ impl From<SearchMusic> for music::Model {
     }
 }
 
-#[api_macro::error(internal_error unauthorized)]
+#[api_macro::error(internal_error, unauthorized)]
 pub enum SearchError {
     /// Room not found
     #[status(StatusCode::UNAUTHORIZED)]
