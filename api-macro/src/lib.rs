@@ -1,9 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Expr, ExprLit, Lit, Meta, Path,
-};
+use syn::{parse_macro_input, parse_quote, Attribute, Expr, ExprLit, ItemEnum, Lit, Meta, Path};
 
 // TODO: clean the code
 // TODO: add positional arguments ? similar to displaydoc
@@ -40,11 +38,9 @@ use syn::{
 ///
 #[proc_macro_derive(ApiError, attributes(status, default_status, with_internal_error))]
 pub fn api_error(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+    let input = parse_macro_input!(input as ItemEnum);
     let name = input.ident;
-    let Data::Enum(DataEnum { variants, ..}) = input.data else {
-        panic!("ApiError can only be derived for enums");
-    };
+    let variants = input.variants;
 
     let default_status = find_status(&input.attrs, "default_status");
 
@@ -127,7 +123,7 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
 /// }
 ///
 /// let response = SearchError::InternalError.into_response();
-/// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+/// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERRO );
 ///
 /// let response = SearchError::Unauthorized.into_response();
 /// assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -135,33 +131,19 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
 ///
 #[proc_macro_attribute]
 pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    let DeriveInput {
-        attrs,
-        vis,
-        ident,
-        generics,
-        data,
-    } = input;
-
-    let Data::Enum(DataEnum { variants, ..}) = data else {
-        panic!("ApiError can only be derived for enums");
-    };
-
-    let mut new_variants = vec![];
+    let mut input = parse_macro_input!(input as ItemEnum);
 
     for token in macro_attrs {
         match token.to_string().as_str() {
-            "internal_error" => new_variants.push(quote!(
+            "internal_error" => input.variants.push(parse_quote!(
                 #[doc = "Internal error"]
                 #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
-                InternalError,
+                InternalError
             )),
-            "unauthorized" => new_variants.push(quote!(
+            "unauthorized" => input.variants.push(parse_quote!(
                 #[doc = "Unauthorized"]
                 #[status(axum::http::status::StatusCode::UNAUTHORIZED)]
-                Unauthorized,
+                Unauthorized
             )),
             token => panic!(
                 "Unknown token '{}', possible token: internal_error, unauthorized",
@@ -170,14 +152,12 @@ pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
         }
     }
 
-    let expanded = quote! {
-        #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        #(#attrs)*
-        #vis enum #ident #generics {
-            #variants
-            #(#new_variants)*
-        }
-    };
+    input.attrs.insert(
+        0,
+        parse_quote!(
+            #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        ),
+    );
 
-    TokenStream::from(expanded)
+    TokenStream::from(quote!(#input))
 }
