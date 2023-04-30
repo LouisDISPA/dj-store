@@ -298,7 +298,7 @@ pub async fn get_music_detail(
 
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct VotedMusic {
-    music_id: i64, //fix this (when deezer api is changed)
+    music_id: i64,
     vote_date: DateTimeUtc,
     like: bool,
 }

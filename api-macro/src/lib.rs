@@ -42,17 +42,41 @@ pub fn api_error(input: TokenStream) -> TokenStream {
     let name = input.ident;
     let variants = input.variants;
 
-    let default_status = find_status(&input.attrs, "default_status");
+    let mut errors = vec![];
+
+    let mut add_error = |err: syn::Error| {
+        errors.push(err);
+        None
+    };
+
+    let default_status = find_status(&input.attrs, "default_status").unwrap_or_else(&mut add_error);
 
     let names = variants.iter().map(|variant| &variant.ident);
-    let status = variants.iter().map(|variant| {
-        find_status(&variant.attrs, "status")
-            .or_else(|| default_status.clone())
-            .unwrap_or_else(|| panic!("Missing status attribute for variant {}", variant.ident))
-    });
+    let status: Vec<Path> = variants
+        .iter()
+        .flat_map(|variant| {
+            find_status(&variant.attrs, "status")
+                .unwrap_or_else(&mut add_error)
+                .or_else(|| default_status.clone())
+                .or_else(||
+                    add_error(syn::Error::new(
+                        variant.ident.span(),
+                        "Missing #[status(...)] attribute, or #[default_status(...)] attribute on the enum.",
+                    ))
+                )
+        })
+        .collect();
     let docs = variants.iter().map(|variant| {
         find_doc(&variant.attrs).unwrap_or_else(|| variant.ident.to_string().to_case(Case::Title))
     });
+
+    if !errors.is_empty() {
+        return errors
+            .into_iter()
+            .map(syn::Error::into_compile_error)
+            .map(TokenStream::from)
+            .collect();
+    }
 
     let expanded = quote! {
         impl axum::response::IntoResponse for #name {
@@ -89,17 +113,13 @@ fn find_doc(attributes: &[Attribute]) -> Option<String> {
 }
 
 /// Finds the status code in the attributes.
-fn find_status(attributes: &[Attribute], ident: &str) -> Option<Path> {
+fn find_status(attributes: &[Attribute], ident: &str) -> Result<Option<Path>, syn::Error> {
     for attr in attributes {
-        if let Meta::List(list) = &attr.meta {
-            if list.path.is_ident(ident) {
-                if let Ok(Meta::Path(path)) = list.parse_args() {
-                    return Some(path);
-                }
-            }
+        if attr.path().is_ident(ident) {
+            return Ok(Some(attr.parse_args()?));
         }
     }
-    None
+    Ok(None)
 }
 
 /// Implements `IntoResponse` for an enum, where each variant has a status code
