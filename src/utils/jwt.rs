@@ -5,10 +5,8 @@ use axum::{
     RequestPartsExt, TypedHeader,
 };
 use chrono::{DateTime, Utc};
-use displaydoc::Display;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tokio::sync::OnceCell;
 use uuid::Uuid;
 
@@ -75,19 +73,19 @@ impl<S: Send + Sync> FromRequestParts<S> for User {
         match verify(auth.token().trim()) {
             Ok(user) => Ok(user),
             Err(err) => {
-                log::warn!("{}", err);
+                log::warn!("{:?}", err);
                 Err(ERROR)
             }
         }
     }
 }
 
-#[derive(Debug, Error, Display)]
+#[derive(Debug, displaydoc::Display)]
 pub enum JwtVerifyError {
     /// The JWT is invalid: {0}
     InvalidJwt(String),
     /// JWT Token not valid yet
-    IssuedAtAfterNow,
+    NotValidYet,
     /// JWT Token expired
     Expired,
 }
@@ -129,7 +127,7 @@ pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
     };
     let now = Utc::now().timestamp();
     if claim.iat > now {
-        return Err(JwtVerifyError::IssuedAtAfterNow);
+        return Err(JwtVerifyError::NotValidYet);
     }
     if claim.exp < now {
         return Err(JwtVerifyError::Expired);

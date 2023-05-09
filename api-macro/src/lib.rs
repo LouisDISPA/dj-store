@@ -1,9 +1,8 @@
-use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::{
-    parse, parse_macro_input, parse_quote, punctuated::Punctuated, Attribute, Expr, ExprLit, Ident,
-    ItemEnum, Lit, Meta, Path, Token,
+    parse, parse_macro_input, parse_quote, punctuated::Punctuated, Attribute, Ident, ItemEnum,
+    Path, Token,
 };
 
 /// Implements `IntoResponse` for an enum, where each variant has a status code
@@ -36,14 +35,14 @@ use syn::{
 /// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 /// ```
 ///
-#[proc_macro_derive(ApiError, attributes(status, default_status, with_internal_error))]
+#[proc_macro_derive(ApiError, attributes(status, default_status))]
 pub fn api_error(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemEnum);
     let name = input.ident;
     let variants = input.variants;
 
+    // TODO: use span.error(err).emit() instead of collecting errors ?
     let mut errors = vec![];
-
     let mut add_error = |err: syn::Error| {
         errors.push(err);
         None
@@ -58,17 +57,12 @@ pub fn api_error(input: TokenStream) -> TokenStream {
             find_status(&variant.attrs, "status")
                 .unwrap_or_else(&mut add_error)
                 .or_else(|| default_status.clone())
-                .or_else(||
-                    add_error(syn::Error::new(
-                        variant.ident.span(),
-                        "Missing #[status(...)] attribute, or #[default_status(...)] attribute on the enum.",
-                    ))
-                )
+                .or_else(|| add_error(syn::Error::new(
+                    variant.ident.span(),
+                    "Missing #[status(...)] attribute, or #[default_status(...)] attribute on the enum.",
+                )))
         })
         .collect();
-    let docs = variants.iter().map(|variant| {
-        find_doc(&variant.attrs).unwrap_or_else(|| variant.ident.to_string().to_case(Case::Title))
-    });
 
     if !errors.is_empty() {
         return errors
@@ -78,38 +72,26 @@ pub fn api_error(input: TokenStream) -> TokenStream {
             .collect();
     }
 
+    // Assert that the enum type implements Display. If not, user sees an error
+    let assert_display = quote_spanned! {name.span()=>
+        struct _AssertDisplay where #name: std::fmt::Display;
+    };
+
     let expanded = quote! {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
-                match self {
-                    #(#name::#names => {
-                        log::warn!(#docs);
-                        (#status, #docs).into_response()
-                    },)*
-                }
+                let status = match self {
+                    #(#name::#names => #status,)*
+                };
+                #assert_display
+                let body = self.to_string();
+                (status, body).into_response()
             }
         }
     };
 
     // Hand the output tokens back to the compiler
     TokenStream::from(expanded)
-}
-
-/// Finds the last doc comment in the attributes.
-fn find_doc(attributes: &[Attribute]) -> Option<String> {
-    for attr in attributes.iter().rev() {
-        if let Meta::NameValue(name_value) = &attr.meta {
-            if name_value.path.is_ident("doc") {
-                if let Expr::Lit(ExprLit {
-                    lit: Lit::Str(lit), ..
-                }) = &name_value.value
-                {
-                    return Some(lit.value().trim().to_string());
-                }
-            }
-        }
-    }
-    None
 }
 
 /// Finds the status code in the attributes.
@@ -159,14 +141,12 @@ pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
     let macro_attrs = parse_macro_input!(macro_attrs as Args);
     let mut input = parse_macro_input!(input as ItemEnum);
 
-    input
-        .variants
-        .extend(macro_attrs.variants.iter().map(ErrorVariant::to_variant));
+    let new_variants = macro_attrs.variants.iter().map(ErrorVariant::to_variant);
+    input.variants.extend(new_variants);
 
     let derive = parse_quote!(
-        #[derive(api_macro::ApiError, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(api_macro::ApiError, displaydoc::Display, Debug, Clone, PartialEq, Eq, Hash)]
     );
-
     input.attrs.insert(0, derive);
 
     TokenStream::from(quote!(#input))

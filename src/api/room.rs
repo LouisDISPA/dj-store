@@ -171,9 +171,6 @@ pub async fn vote(
     Ok(())
 }
 
-// TODO: Maybe use struct name to generate column name for the query
-// Like in the entity crate when deriving Model on a struct
-// a column name is generated from the struct field name
 #[derive(Serialize, Deserialize, FromQueryResult, Debug)]
 pub struct Music {
     id: i64,
@@ -200,6 +197,8 @@ pub async fn get_musics(
         return Err(GetMusicError::Unauthorized);
     }
 
+    let votes = Alias::new("votes");
+
     let all_votes = vote::Entity::find()
         .select_only()
         .column_as(vote::Column::VoteDate.max(), vote::Column::VoteDate)
@@ -219,7 +218,7 @@ pub async fn get_musics(
             music::Column::ImageHash,
         ])
         .and_where(music::Column::Id.is_not_null())
-        .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
+        .expr_as(vote::Column::Like.sum(), votes.clone())
         .group_by_col(music::Column::Id)
         .from_subquery(all_votes, vote::Entity)
         .join(
@@ -227,8 +226,8 @@ pub async fn get_musics(
             music::Entity,
             Expr::col(vote::Column::MusicId).equals(music::Column::Id),
         )
-        .and_having(Expr::col(Alias::new("votes")).gt(0))
-        .order_by(Alias::new("votes"), Order::Desc)
+        .and_having(Expr::col(votes.clone()).gt(0))
+        .order_by(votes, Order::Desc)
         .take();
 
     if user.role != Role::Admin {

@@ -11,9 +11,9 @@ members = [".", "entity", "migration", "deezer-rs", "api-macro"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-axum = { version = "0.6.11", features = ["headers", "ws"] }
+axum = { version = "0.6", features = ["headers", "ws"] }
 tower-http = { version = "0.4", features = ["cors", "trace"] }
-axum-server = { version = "0.4", default-features = false, features = ["tls-rustls"], optional = true}
+axum-server = { version = "0.5", default-features = false, features = ["tls-rustls"], optional = true}
 
 rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
@@ -24,13 +24,12 @@ argon2 = { version = "0.5.0", features = ["std"] }
 
 rust-embed = { version = "6", features = ["mime-guess"], optional = true}
 
-sea-orm = { version = "0.11.0", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+sea-orm = { version = "0.11.0", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # deku = "0.15.1"
 
 dotenvy = "0.15"
-thiserror = "1"
 displaydoc = "0.2"
 log = "0.4"
 tracing-subscriber = "0.3"

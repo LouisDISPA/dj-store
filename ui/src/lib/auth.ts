@@ -71,7 +71,7 @@ async function joinRoom(room_id: RoomId) {
 	auth.set({ access_token, role, room_id });
 }
 
-async function tryRecallUser() {
+function tryRecallUser() {
 	const access_token = localStorage.getItem(TOKEN_STORAGE_KEY);
 	if (!access_token) {
 		disconnect();

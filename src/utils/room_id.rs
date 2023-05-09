@@ -3,7 +3,6 @@ use std::{
     fmt::{Display, Formatter},
     str::FromStr,
 };
-use thiserror::Error;
 
 /// The room identifier.
 ///
@@ -38,7 +37,7 @@ impl RoomID {
     }
 }
 
-#[derive(Error, Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Display, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RoomParseError {
     /// The room ID must be 6 characters long.
     InvalidLength,
@@ -96,8 +95,9 @@ impl<'de> serde::Deserialize<'de> for RoomID {
     where
         D: serde::Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        FromStr::from_str(&s).map_err(serde::de::Error::custom)
+        <&str>::deserialize(deserializer)?
+            .parse()
+            .map_err(serde::de::Error::custom)
     }
 }
 
@@ -106,7 +106,7 @@ impl serde::Serialize for RoomID {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        serializer.collect_str(self)
     }
 }
 
