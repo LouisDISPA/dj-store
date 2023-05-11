@@ -717,6 +717,7 @@ dependencies = [
  "secrecy",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "tower-http",
  "tracing-subscriber",

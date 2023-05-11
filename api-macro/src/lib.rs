@@ -81,9 +81,10 @@ pub fn api_error(input: TokenStream) -> TokenStream {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
                 let status = match self {
-                    #(#name::#names => #status,)*
+                    #(#name::#names {..} => #status,)*
                 };
                 #assert_display
+                log::error!("Error: {:?}", self);
                 let body = self.to_string();
                 (status, body).into_response()
             }
@@ -145,7 +146,7 @@ pub fn error(macro_attrs: TokenStream, input: TokenStream) -> TokenStream {
     input.variants.extend(new_variants);
 
     let derive = parse_quote!(
-        #[derive(api_macro::ApiError, displaydoc::Display, Debug, Clone, PartialEq, Eq, Hash)]
+        #[derive(api_macro::ApiError, thiserror::Error, displaydoc::Display, Debug)]
     );
     input.attrs.insert(0, derive);
 
@@ -177,7 +178,10 @@ impl ErrorVariant {
             ErrorVariant::InternalError => parse_quote!(
                 #[doc = "Internal error"]
                 #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
-                InternalError
+                InternalError(
+                    #[from]
+                    sea_orm::DbErr
+                )
             ),
             ErrorVariant::Unauthorized => parse_quote!(
                 #[doc = "Unauthorized"]

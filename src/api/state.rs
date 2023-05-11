@@ -81,8 +81,8 @@ impl RoomChannels {
         let mut channels = self
             .channels
             .write()
-            .map_err(|_| {
-                log::error!("Failed to subscribe to room {}: Poisoned lock", room_id);
+            .map_err(|err| {
+                log::error!("Failed to subscribe to room {}: {}", room_id, err);
             })
             .ok()?;
 

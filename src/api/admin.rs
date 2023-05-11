@@ -91,10 +91,7 @@ pub async fn get_rooms(
         return Err(GetRoomsError::Unauthorized);
     }
 
-    let rooms = room::Entity::find().all(&state.db).await.map_err(|e| {
-        log::error!("Failed to get rooms: {}", e);
-        GetRoomsError::InternalError
-    })?;
+    let rooms = room::Entity::find().all(&state.db).await?;
 
     let rooms = rooms.into_iter().map(GetRoom::from).collect();
 
@@ -141,14 +138,13 @@ pub async fn create_room(
         .map(GetRoom::from)
         .map(Json)
         .map_err(|err| {
-            log::error!("Failed to create room '{}': {}", room.id, err);
             // Ugly line to get the error code from sqlx and check if it's a duplicate key error
-            if let DbErr::Exec(RuntimeErr::SqlxError(err)) = err {
+            if let DbErr::Exec(RuntimeErr::SqlxError(err)) = &err {
                 if err.as_database_error().and_then(|e| e.code()).as_deref() == Some("2067") {
                     return CreateRoomsError::RoomIdAlreadyExists;
                 }
             }
-            CreateRoomsError::InternalError
+            CreateRoomsError::InternalError(err)
         })
 }
 
@@ -171,19 +167,18 @@ pub async fn delete_room(
     let rows_affected = room::Entity::delete_many()
         .filter(room::Column::PublicId.eq(room_id.value()))
         .exec(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to delete room: {}", e);
-            DeleteRoomsError::InternalError
-        })?
+        .await?
         .rows_affected;
 
     match rows_affected {
         1 => Ok(()),
         0 => Err(DeleteRoomsError::RoomIdDoesNotExist),
         _ => {
-            log::error!("Failed to delete room: deleted {} rows", rows_affected);
-            Err(DeleteRoomsError::InternalError)
+            log::error!(
+                "More than one room was deleted: deleted {} rows",
+                rows_affected
+            );
+            Ok(())
         }
     }
 }

@@ -46,11 +46,7 @@ pub async fn join(
     let room = room::Entity::find()
         .filter(room::Column::PublicId.eq(room_id.value()))
         .one(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to check if room exists: {}", e);
-            JoinError::InternalError
-        })?;
+        .await?;
 
     let Some(room) = room else {
         return Err(JoinError::RoomNotFound);
@@ -69,11 +65,7 @@ pub async fn join(
         .filter(room::Column::PublicId.eq(room_id.value()))
         .filter(room::Column::UserCount.lt(1000))
         .exec(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to increment user count: {}", e);
-            JoinError::InternalError
-        })?
+        .await?
         .rows_affected;
 
     match row_affected {
@@ -86,7 +78,7 @@ pub async fn join(
                 "More than one Room was update ({}): User join -> user_count + 1",
                 row_affected
             );
-            Err(JoinError::InternalError)
+            Err(JoinError::RoomNotFound)
         }
     }
 }
@@ -142,11 +134,7 @@ pub async fn vote(
         .filter(vote::Column::UserToken.eq(user.uid))
         .group_by(vote::Column::UserToken)
         .one(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to query last vote: {}", e);
-            VoteError::InternalError
-        })?
+        .await?
         .map(|model| model.like);
 
     if last_vote == Some(vote.like) {
@@ -155,11 +143,7 @@ pub async fn vote(
 
     vote.to_active_model(user.uid, room_id.value())
         .save(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to save vote: {}", e);
-            VoteError::InternalError
-        })?;
+        .await?;
 
     let event = VoteEvent {
         music_id: music.id,
@@ -186,6 +170,9 @@ pub enum GetMusicError {
     /// Music not found
     #[status(StatusCode::BAD_REQUEST)]
     MusicNotFound,
+    /// Room not found
+    #[status(StatusCode::BAD_REQUEST)]
+    RoomNotFound,
 }
 
 pub async fn get_musics(
@@ -195,6 +182,15 @@ pub async fn get_musics(
 ) -> Result<Json<Vec<Music>>, GetMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
         return Err(GetMusicError::Unauthorized);
+    }
+
+    let room = room::Entity::find()
+        .filter(room::Column::PublicId.eq(room_id.value()))
+        .one(&state.db)
+        .await?;
+
+    if room.is_none() {
+        return Err(GetMusicError::RoomNotFound);
     }
 
     let votes = Alias::new("votes");
@@ -239,11 +235,8 @@ pub async fn get_musics(
     Music::find_by_statement(backend.build(&statement))
         .all(&state.db)
         .await
-        .map(Json::from)
-        .map_err(|e| {
-            log::error!("Failed to get musics: {}", e);
-            GetMusicError::InternalError
-        })
+        .map(Json)
+        .map_err(From::from)
 }
 
 pub async fn get_music_detail(
@@ -283,11 +276,7 @@ pub async fn get_music_detail(
 
     let music = Music::find_by_statement(backend.build(&statement))
         .one(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to get musics: {}", e);
-            GetMusicError::InternalError
-        })?;
+        .await?;
 
     match music {
         Some(music) => Ok(Json(music)),
@@ -322,9 +311,6 @@ pub async fn get_voted_musics(
         .into_model()
         .all(&state.db)
         .await
-        .map(Json::from)
-        .map_err(|e| {
-            log::error!("Failed to get voted musics: {}", e);
-            GetVotedMusicError::InternalError
-        })
+        .map(Json)
+        .map_err(From::from)
 }

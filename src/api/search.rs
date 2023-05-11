@@ -58,6 +58,9 @@ pub enum SearchError {
     /// Room not found
     #[status(StatusCode::UNAUTHORIZED)]
     RoomNotFound,
+    /// Search failed
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+    SearchFailed(#[from] deezer_rs::Error),
 }
 
 // TODO: prevent user from searching too much
@@ -74,22 +77,14 @@ pub async fn search(
     room::Entity::find()
         .filter(room::Column::PublicId.eq(room_id.value()))
         .one(&state.db)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to get room: {}", e);
-            SearchError::InternalError
-        })?
+        .await?
         .ok_or(SearchError::RoomNotFound)?;
 
     let response = state
         .deezer_client
         .search()
         .get_tracks(&request.query)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to search music: {}", e);
-            SearchError::InternalError
-        })?;
+        .await?;
 
     let musics = response.data.into_iter().map(SearchMusic::from).collect();
 
