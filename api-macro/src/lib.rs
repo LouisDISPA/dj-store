@@ -19,13 +19,23 @@ use syn::{
 /// # use axum::http::StatusCode;
 /// # use axum::response::IntoResponse;
 /// #
-/// #[derive(ApiError)]
+/// #[derive(ApiError, Debug)]
 /// #[default_status(StatusCode::INTERNAL_SERVER_ERROR)]
 /// pub enum SearchError {
-///     /// Room is not found
 ///     #[status(StatusCode::UNAUTHORIZED)]
 ///     RoomNotFound,
 ///     InternalError,
+/// }
+///
+/// // Implement the display trait for the enum
+/// // (this is required by the derive macro)
+/// impl std::fmt::Display for SearchError {
+///    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+///       match self {
+///          SearchError::RoomNotFound => write!(f, "Room not found"),
+///          SearchError::InternalError => write!(f, "Internal error"),
+///      }
+///   }
 /// }
 ///
 /// let response = SearchError::RoomNotFound.into_response();
@@ -41,7 +51,6 @@ pub fn api_error(input: TokenStream) -> TokenStream {
     let name = input.ident;
     let variants = input.variants;
 
-    // TODO: use span.error(err).emit() instead of collecting errors ?
     let mut errors = vec![];
     let mut add_error = |err: syn::Error| {
         errors.push(err);
@@ -77,6 +86,11 @@ pub fn api_error(input: TokenStream) -> TokenStream {
         struct _AssertDisplay where #name: std::fmt::Display;
     };
 
+    // Assert that the enum type implements Debug. If not, user sees an error
+    let assert_debug = quote_spanned! {name.span()=>
+        struct _AssertDebug where #name: std::fmt::Debug;
+    };
+
     let expanded = quote! {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
@@ -84,6 +98,7 @@ pub fn api_error(input: TokenStream) -> TokenStream {
                     #(#name::#names {..} => #status,)*
                 };
                 #assert_display
+                #assert_debug
                 log::error!("Error: {:?}", self);
                 let body = self.to_string();
                 (status, body).into_response()
@@ -113,7 +128,7 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Result<Option<Path>, sy
 /// It can be used to add additional variants.
 ///
 /// Attributes:
-/// - `internal_error`: add an `InternalError` variant with status code `INTERNAL_SERVER_ERROR`
+/// - `internal_error`: add an `InternalError(sea_orm::DbErr)` variant with status code `INTERNAL_SERVER_ERROR`
 /// - `unauthorized`: add an `Unauthorized` variant with status code `UNAUTHORIZED`
 ///
 /// # Example
@@ -123,15 +138,15 @@ fn find_status(attributes: &[Attribute], ident: &str) -> Result<Option<Path>, sy
 /// # use axum::http::StatusCode;
 /// # use axum::response::IntoResponse;
 /// #
-/// #[error(internal_error unauthorized)]
+/// #[error(unauthorized)]
 /// enum SearchError {
 ///     /// Room is not found
 ///     #[status(StatusCode::UNAUTHORIZED)]
 ///     RoomNotFound,
 /// }
 ///
-/// let response = SearchError::InternalError.into_response();
-/// assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERRO );
+/// let response = SearchError::RoomNotFound.into_response();
+/// assert_eq!(response.status(), StatusCode::UNAUTHORIZED );
 ///
 /// let response = SearchError::Unauthorized.into_response();
 /// assert_eq!(response.status(), StatusCode::UNAUTHORIZED);

@@ -50,8 +50,11 @@ name = "api-macro"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "displaydoc",
+ "log",
  "quote",
  "syn 2.0.15",
+ "thiserror",
 ]
 
 [[package]]
