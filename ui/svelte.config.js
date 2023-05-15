@@ -16,7 +16,7 @@ const config = {
 		paths: {
 			base: process.env.VITE_BASE_HREF || ''
 		},
-		inlineStyleThreshold: 1024,
+		inlineStyleThreshold: 1024
 	}
 };
 
