@@ -42,6 +42,7 @@ COPY src ./src
 COPY entity ./entity
 COPY migration ./migration
 COPY deezer-rs ./deezer-rs
+COPY api-macro ./api-macro
 COPY Cargo* ./
 
 RUN cargo build --release

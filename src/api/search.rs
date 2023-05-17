@@ -63,7 +63,6 @@ pub enum SearchError {
     SearchFailed(#[from] deezer_rs::Error),
 }
 
-// TODO: prevent user from searching too much
 pub async fn search(
     State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,

@@ -177,6 +177,19 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("room_user_token_music_id")
+                    .table(Vote::Table)
+                    .col(Vote::RoomId)
+                    .col(Vote::UserToken)
+                    .col(Vote::MusicId)
+                    .to_owned(),
+            )
+            .await?;
+
         return Ok(());
     }
 
