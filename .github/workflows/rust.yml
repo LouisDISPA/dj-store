@@ -41,6 +41,8 @@ jobs:
           components: clippy
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.toolchain }}
       - name: cargo clippy
         uses: actions-rs/clippy-check@v1
         with:
