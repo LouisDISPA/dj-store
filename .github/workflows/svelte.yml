@@ -1,0 +1,35 @@
+on:
+  push:
+    branches: [main]
+name: Client
+env:
+  NODE_VERSION: 18
+jobs: 
+  lint:
+    runs-on: ubuntu-latest
+    defaults: 
+      run:
+        working-directory: ./ui
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
+      - run: yarn lint
+  build:
+    runs-on: ubuntu-latest
+    defaults: 
+      run:
+        working-directory: ./ui
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
+      - run: yarn build

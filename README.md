@@ -3,9 +3,7 @@
 
 **DJ-store** is an application that allows DJs to get recommendations from people on the dancefloor. The idea is simple: dancers can scan a QR code and vote for the songs they want to hear. The DJ can then use this feedback to adjust their playlist and keep the dancefloor packed.
 
-This 
-
-<div style="display: flex; align-items: start; justify-content: center;">
+<div style="display: flex; align-items: center; justify-content: center;">
     <img src="./img/room_home.png" alt="Room home" width="180px">
     <img src="./img/room_search.png" alt="Room Search" width="180px" style="padding: 0px 10px">
     <img src="./img/room_admin.png" alt="Room admin" width="180px">
