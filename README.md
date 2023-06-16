@@ -3,11 +3,11 @@
 
 **DJ-store** is an application that allows DJs to get recommendations from people on the dancefloor. The idea is simple: dancers can scan a QR code and vote for the songs they want to hear. The DJ can then use this feedback to adjust their playlist and keep the dancefloor packed.
 
-<div style="display: flex; align-items: center; justify-content: center;">
+<p align="center">
     <img src="./img/room_home.png" alt="Room home" width="180px">
     <img src="./img/room_search.png" alt="Room Search" width="180px" style="padding: 0px 10px">
     <img src="./img/room_admin.png" alt="Room admin" width="180px">
-</div>
+</p>
 
 ## Features
 
@@ -20,8 +20,8 @@ The search feature is powered by the [Deezer API](https://developers.deezer.com/
 
 ### /!\ Disclaimer /!\
 
-This project is a proof of concept. It is not meant to be used in production.
-Especially, you will need to comply with the [Deezer API Terms of Use](https://developers.deezer.com/termsofuse).
+This project is a proof of concept. It is not meant to be used in production.  
+You will need to comply with the [Deezer API Terms of Use](https://developers.deezer.com/termsofuse).
 
 ### Ideas
 
@@ -29,7 +29,7 @@ Especially, you will need to comply with the [Deezer API Terms of Use](https://d
 
 * [ ] new UI and UX
 * [ ] new logo and name ?
-* [ ] mulitple admins
+* [ ] multiple admins
 
 **Others:**
 
@@ -50,7 +50,7 @@ Especially, you will need to comply with the [Deezer API Terms of Use](https://d
 This project is made of two parts:
 
 * A backend server written in Rust
-* A frontend written written in Svelte
+* A frontend client written in Svelte
 
 ### Prerequisites
 
@@ -105,7 +105,11 @@ export VITE_API_URL=https://[your-backend-url]
 yarn build
 ```
 
-This will create a `dist` folder containing the static files.
+This will create a `dist` folder containing the static files.  
+The `VITE_API_URL` variable is optional. If you don't specify it,
+the frontend will use the dynamic host from the window.
+
+#### Docker
 
 A docker image is also available to build:
 
