@@ -1,7 +1,10 @@
 [package]
 name = "dj-store"
 version = "0.1.0"
+description = "DJ-store is an application that allows DJs to get recommendations from people on the dancefloor."
+authors = ["Louis DISPA <louis.dispa@outlook.fr>"]
 edition = "2021"
+license-file = "LICENSE"
 build = "src/build.rs"
 
 [workspace]

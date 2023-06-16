@@ -6,11 +6,7 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use tower::{
-    buffer::BufferLayer,
-    limit::{ConcurrencyLimitLayer, RateLimitLayer},
-    ServiceBuilder,
-};
+use tower::{limit::ConcurrencyLimitLayer, ServiceBuilder};
 use tower_http::trace::TraceLayer;
 
 use self::state::ApiState;
@@ -38,8 +34,8 @@ pub fn router(state: ApiState) -> Router {
     // Deezer API rate limit is 50 requests per 5 seconds
     let rate_limit = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(handle_error))
-        .layer(BufferLayer::new(128))
-        .layer(RateLimitLayer::new(40, Duration::from_secs(5)));
+        .buffer(128)
+        .rate_limit(40, Duration::from_secs(5));
 
     Router::<ApiState>::new()
         .layer(TraceLayer::new_for_http())
