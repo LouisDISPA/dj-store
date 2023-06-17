@@ -4,9 +4,8 @@
 **DJ-store** is an application that allows DJs to get recommendations from people on the dancefloor. The idea is simple: dancers can scan a QR code and vote for the songs they want to hear. The DJ can then use this feedback to adjust their playlist and keep the dancefloor packed.
 
 <p align="center">
-    <img src="./img/room_home.png" alt="Room home" width="180px">
-    <img src="./img/room_search.png" alt="Room Search" width="180px" style="padding: 0px 10px">
-    <img src="./img/room_admin.png" alt="Room admin" width="180px">
+    <img src="./img/index.png" alt="Index" width="180px">
+    <img src="./img/room_home.png" alt="Room Home" width="180px">
 </p>
 
 ## Features
@@ -20,30 +19,7 @@ The search feature is powered by the [Deezer API](https://developers.deezer.com/
 
 ### /!\ Disclaimer /!\
 
-This project is a proof of concept. It is not meant to be used in production.  
-You will need to comply with the [Deezer API Terms of Use](https://developers.deezer.com/termsofuse).
-
-### Ideas
-
-**For V1:**
-
-* [ ] new UI and UX
-* [ ] new logo and name ?
-* [ ] multiple admins
-
-**Others:**
-
-* [ ] Add a "now playing"
-* [ ] Try serveless, cloud functions
-    * [ ] shuttle.rs
-    * [ ] cloudflare workers
-    * [ ] AWS lambda
-* [ ] Enable postgres support
-* [ ] Statistics view for admins
-* [ ] Use message broker for real time updates
-* [ ] Allow other music services
-* [ ] API swagger documentation
-* [ ] Documentation (always)
+Please note that DJ-store is a proof-of-concept project and is not intended for production use. You must ensure compliance with the [Deezer API Terms of Use](https://developers.deezer.com/termsofuse).
 
 ## Getting started
 
@@ -57,7 +33,7 @@ This project is made of two parts:
 To run DJ-store on your machine, you'll need to have:
 
 * **Rust, Cargo**: [Install Rustup](https://www.rust-lang.org/tools/install)
-* **Node.js**: [Install Node.js](https://nodejs.org/en/download/) (I recommend using [NVM](https://github.com/nvm-sh/nvm#installing-and-updating))
+* **Node.js**: [Install Node](https://nodejs.org/en/download/) (recommeded: [NVM](https://github.com/nvm-sh/nvm#installing-and-updating))
 * **Yarn**: [Install Yarn](https://yarnpkg.com/getting-started/install)
 
 ### Development
@@ -68,8 +44,7 @@ To start the backend server, run:
 cargo run
 ```
 
-This will start the server on port `3000`.  
-By default, it will also build the frontend and serve it. Once the frontend is built, you will need to build it again manually if you make any changes to the frontend code.
+This will start the server on port `3000`. By default, it will also build and serve the frontend. If you make any changes to the frontend code, you'll need to manually rebuild it.
 
 If you want to run the frontend separately, you can do so by running:
 
@@ -82,7 +57,7 @@ This will start the dev server on port `5173` with hot reload.
 
 The `ui/.env` file contains an optional variable `VITE_API_URL` that you can use to specify the backend URL. By default, it will be `http://localhost:3000`.
 
-### Build for production
+### Release build
 
 To build the backend for production, run:
 
