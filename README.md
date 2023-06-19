@@ -28,6 +28,13 @@ This project is made of two parts:
 * A backend server written in Rust
 * A frontend client written in Svelte
 
+To try it out, you can use the [docker image](https://github.com/louisdispa/dj-store/pkgs/container/dj-store)
+
+```bash
+# usename: admin / password: admin
+docker run -p 3000:3000 -e JWT_SECRET="test" -e ADMIN_USERNAME="admin" -e ADMIN_PASSWORD_HASH='$argon2id$v=19$m=19456,t=2,p=1$bjFCSXBGR3pJclBraDFOSA$Aiqx8jvWC8UT8Xj9K37DqA' ghcr.io/louisdispa/dj-store:main
+```
+
 ### Prerequisites
 
 To run DJ-store on your machine, you'll need to have:

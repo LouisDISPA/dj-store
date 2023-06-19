@@ -48,13 +48,16 @@ COPY Cargo* ./
 RUN cargo build --release
 RUN mv /app/target/release/dj-store /dj-store
 RUN upx --lzma --best /dj-store
+RUN touch /db.sqlite
 
 # --- Build the final image ---
 # This image is from scratch and only contains the binary
 
 FROM scratch AS runtime
 COPY --from=builder /dj-store /
+COPY --from=builder /db.sqlite /
 
 ENV DATABASE_URL=sqlite://db.sqlite
+ENV RUST_LOG=warn,dj_store=info
 
 ENTRYPOINT ["/dj-store"]
