@@ -201,24 +201,22 @@ mod tests {
         let exp = Utc::now() + Duration::hours(1);
         let token = sign(user, exp);
         let user = verify(&token).unwrap();
-        assert_eq!(user.role, Role::User { room_id: RoomID::new(0) });
-    }
+        assert_eq!(
+            user.role,
+            Role::User {
+                room_id: RoomID::new(0)
+            }
+        );
 
-    #[test]
-    fn test_jwt_expired() {
         let user = User::new_user(RoomID::new(0));
         let exp = Utc::now() - Duration::hours(1);
         let token = sign(user, exp);
         let user = verify(&token);
         assert!(user.is_err());
-    }
 
-    #[test]
-    fn test_jwt_not_valid_yet() {
         let user = User::new_user(RoomID::new(0));
         let exp = Utc::now() + Duration::hours(2);
-        let token = 
-        jsonwebtoken::encode(
+        let token = jsonwebtoken::encode(
             &Header::default(),
             &Claims {
                 user,
@@ -232,5 +230,4 @@ mod tests {
         assert!(user.is_err());
         assert_eq!(user.unwrap_err(), JwtVerifyError::NotValidYet);
     }
-
 }

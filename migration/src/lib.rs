@@ -28,6 +28,8 @@ mod tests {
             .await
             .expect("Failed to migrate database");
 
-        Migrator::down(&db, None).await.expect("Failed to migrate database");
+        Migrator::down(&db, None)
+            .await
+            .expect("Failed to migrate database");
     }
 }
