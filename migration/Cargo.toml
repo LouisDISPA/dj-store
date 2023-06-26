@@ -21,3 +21,6 @@ features = [
   "runtime-tokio-rustls",  # `ASYNC_RUNTIME` feature
   "sqlx-sqlite",         # `DATABASE_DRIVER` feature
 ]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }

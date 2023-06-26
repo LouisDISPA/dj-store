@@ -1308,6 +1308,7 @@ dependencies = [
  "async-std",
  "sea-orm",
  "sea-orm-migration",
+ "tokio",
 ]
 
 [[package]]
