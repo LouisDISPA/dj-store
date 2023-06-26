@@ -158,9 +158,23 @@ mod tests {
     fn test_display_parse() {
         for i in 0..1000 {
             let id = RoomID { value: i };
-            assert_eq!(format!("{}", id).parse::<RoomID>(), Ok(id));
+            let str = format!("{}", id);
+            assert_eq!(str.parse::<RoomID>(), Ok(id));
+            assert_eq!(str.parse::<RoomID>().map(|r| r.value()), Ok(i));
         }
         let id = MAX;
         assert_eq!(format!("{}", id).parse::<RoomID>(), Ok(id));
+    }
+
+    use serde_test::{assert_tokens, Token};
+
+    #[test]
+    fn test_serde() {
+        assert_tokens(&RoomID { value: 0 }, &[Token::BorrowedStr("AAAAAA")]);
+        assert_tokens(&RoomID { value: 1 }, &[Token::BorrowedStr("AAAAAB")]);
+        assert_tokens(&RoomID { value: 25 }, &[Token::BorrowedStr("AAAAAZ")]);
+        assert_tokens(&RoomID { value: 26 }, &[Token::BorrowedStr("AAAABA")]);
+        assert_tokens(&RoomID { value: 27 }, &[Token::BorrowedStr("AAAABB")]);
+        assert_tokens(&MAX, &[Token::BorrowedStr("ZZZZZZ")]);
     }
 }

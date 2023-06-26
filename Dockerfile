@@ -60,4 +60,5 @@ COPY --from=builder /db.sqlite /
 ENV DATABASE_URL=sqlite://db.sqlite
 ENV RUST_LOG=warn,dj_store=info
 
-ENTRYPOINT ["/dj-store"]
+EXPOSE 3000
+ENTRYPOINT ["/dj-store" "0.0.0.0:3000"]

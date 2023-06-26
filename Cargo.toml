@@ -50,6 +50,9 @@ default = ["embed-ui"]
 embed-ui = ["dep:rust-embed"]
 https = ["dep:axum-server"]
 
+[dev-dependencies]
+serde_test = "1"
+
 # TODO: fix caching with cargo-chef when optimizing
 # or not cache for docker build
 # [profile.release]

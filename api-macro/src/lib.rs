@@ -94,14 +94,21 @@ pub fn api_error(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl axum::response::IntoResponse for #name {
             fn into_response(self) -> axum::response::Response {
-                let status = match self {
-                    #(#name::#names {..} => #status,)*
-                };
                 #assert_display
                 #assert_debug
                 log::error!("Error: {:?}", self);
+                let status = self.status();
                 let body = self.to_string();
                 (status, body).into_response()
+            }
+        }
+
+        impl #name {
+            /// Returns the status code for this error.
+            pub fn status(&self) -> axum::http::StatusCode {
+                match self {
+                    #(#name::#names {..} => #status,)*
+                }
             }
         }
     };
