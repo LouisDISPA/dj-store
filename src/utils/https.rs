@@ -51,5 +51,5 @@ pub async fn run_https_server(addr: SocketAddr, app: Router) {
             eprintln!("Missing {KEY_KEY} env var");
             std::process::exit(1);
         }
-    };
+    }
 }

@@ -8,6 +8,7 @@ use axum::{
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::utils::jwt::{Role, User, UserToken};
@@ -33,6 +34,18 @@ pub enum JoinError {
     RoomExpired,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/room/{room_id}/join",
+    params(RoomID),
+    responses(
+        (status = StatusCode::OK, description = "The authentificated user tokens", body = UserToken),
+        (status = StatusCode::NOT_FOUND, description = "The room does not exist"),
+        (status = StatusCode::UNAUTHORIZED, description = "The room is full"),
+        (status = StatusCode::UNAUTHORIZED, description = "The room is closed"),
+        (status = StatusCode::INTERNAL_SERVER_ERROR, description = "Internal error"),
+    )
+)]
 pub async fn join(
     State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,
@@ -93,7 +106,7 @@ pub enum VoteError {
     AlreadyVoted,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct VoteBody {
     music_id: MusicId,
     like: bool,
@@ -104,13 +117,26 @@ impl VoteBody {
         vote::ActiveModel {
             user_token: Set(user_token),
             room_id: Set(room_id),
-            music_id: Set(self.music_id),
+            music_id: Set(self.music_id.into()),
             like: Set(self.like),
             ..Default::default()
         }
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/room/{room_id}/vote",
+    params(RoomID),
+    request_body = VoteBody,
+    responses(
+        (status = StatusCode::OK, description = "The vote was successful"),
+        (status = StatusCode::BAD_REQUEST, description = "The music does not exist"),
+        (status = StatusCode::BAD_REQUEST, description = "Already voted for the music"),
+        (status = StatusCode::UNAUTHORIZED, description = "The user is not in the room"),
+        (status = StatusCode::INTERNAL_SERVER_ERROR, description = "Internal error"),
+    )
+)]
 pub async fn vote(
     State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,
@@ -121,7 +147,7 @@ pub async fn vote(
         return Err(VoteError::Unauthorized);
     }
 
-    let music = get_music_or_store_music(&state, vote.music_id)
+    let music = get_music_or_store_music(&state, vote.music_id.into())
         .await
         .map_err(|e| {
             log::error!("Failed to get music: {}", e);
@@ -146,7 +172,7 @@ pub async fn vote(
         .await?;
 
     let event = VoteEvent {
-        music_id: music.id,
+        music_id: music.id.into(),
         like: vote.like,
     };
 
@@ -155,7 +181,7 @@ pub async fn vote(
     Ok(())
 }
 
-#[derive(Serialize, Deserialize, FromQueryResult, Debug)]
+#[derive(Serialize, Deserialize, FromQueryResult, Debug, ToSchema)]
 pub struct Music {
     id: i64,
     title: String,
@@ -175,6 +201,18 @@ pub enum GetMusicError {
     RoomNotFound,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/room/{room_id}/music",
+    params(RoomID),
+    responses(
+        (status = StatusCode::OK, description = "The list of music"),
+        (status = StatusCode::BAD_REQUEST, description = "Music not found"),
+        (status = StatusCode::BAD_REQUEST, description = "Room not found"),
+        (status = StatusCode::UNAUTHORIZED, description = "The user is not in the room"),
+        (status = StatusCode::INTERNAL_SERVER_ERROR, description = "Internal error"),
+    )
+)]
 pub async fn get_musics(
     State(state): State<ApiState>,
     Path(room_id): Path<RoomID>,
@@ -239,9 +277,22 @@ pub async fn get_musics(
         .map_err(From::from)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/room/{room_id}/music/{music_id}",
+    params(RoomID, MusicId),
+    responses(
+        (status = StatusCode::OK, description = "The music", body = Music),
+        (status = StatusCode::BAD_REQUEST, description = "Music not found"),
+        (status = StatusCode::BAD_REQUEST, description = "Room not found"),
+        (status = StatusCode::UNAUTHORIZED, description = "The user is not in the room"),
+        (status = StatusCode::INTERNAL_SERVER_ERROR, description = "Internal error"),
+    )
+)]
 pub async fn get_music_detail(
     State(state): State<ApiState>,
-    Path((room_id, music_id)): Path<(RoomID, MusicId)>,
+    Path(room_id): Path<RoomID>,
+    Path(music_id): Path<MusicId>,
     user: User,
 ) -> Result<Json<Music>, GetMusicError> {
     if (Role::User { room_id }) != user.role && user.role != Role::Admin {
@@ -252,7 +303,7 @@ pub async fn get_music_detail(
         .select_only()
         .column_as(vote::Column::VoteDate.max(), "vote_date")
         .column(vote::Column::Like)
-        .filter(vote::Column::MusicId.eq(music_id))
+        .filter(vote::Column::MusicId.eq(*music_id))
         .filter(vote::Column::RoomId.eq(room_id.value()))
         .left_join(music::Entity)
         .group_by(vote::Column::UserToken)
@@ -269,7 +320,7 @@ pub async fn get_music_detail(
         .expr_as(vote::Column::Like.sum(), Alias::new("votes"))
         .from_subquery(all_votes, vote::Entity)
         .from(music::Entity)
-        .and_where(music::Column::Id.eq(music_id))
+        .and_where(music::Column::Id.eq(*music_id))
         .take();
 
     let backend = state.db.get_database_backend();

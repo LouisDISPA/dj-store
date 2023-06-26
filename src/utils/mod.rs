@@ -36,3 +36,27 @@ macro_rules! required_envs {
     }
     };
 }
+
+/// Get the address to listen on from the first command line argument.
+///
+/// If no argument is given, the default address is `0.0.0.0:3000`. \
+/// If the argument is invalid, the program exits with code 1.
+pub fn get_addr() -> std::net::SocketAddr {
+    let mut args = std::env::args();
+    let executable = args.next().unwrap();
+
+    args.next()
+        .unwrap_or_else(|| "0.0.0.0:3000".to_string())
+        .parse()
+        .unwrap_or_else(|_| print_usage("Invalid address and port.", &executable))
+}
+
+/// Print usage and exit with code 1.
+pub fn print_usage(error: &str, executable: &str) -> ! {
+    eprintln!("{}", error);
+    eprintln!(
+        "Usage: {} <address>:<port>",
+        executable.split('/').last().unwrap()
+    );
+    std::process::exit(1)
+}

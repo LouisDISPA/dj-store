@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::Deref, time::Duration};
 
 use axum::{
     error_handling::HandleErrorLayer,
@@ -6,8 +6,10 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
+use serde::{Deserialize, Serialize};
 use tower::{limit::ConcurrencyLimitLayer, ServiceBuilder};
 use tower_http::trace::TraceLayer;
+use utoipa::{OpenApi, IntoParams};
 
 use self::state::ApiState;
 
@@ -18,7 +20,29 @@ mod websocket;
 
 pub mod state;
 
-pub type MusicId = i64;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, IntoParams)]
+#[into_params(names("music_id"), parameter_in = Path)]
+pub struct MusicId(i64);
+
+impl Deref for MusicId {
+    type Target = i64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<i64> for MusicId {
+    fn from(id: i64) -> Self {
+        Self(id)
+    }
+}
+
+impl From<MusicId> for i64 {
+    fn from(id: MusicId) -> Self {
+        id.0
+    }
+}
 
 pub fn router(state: ApiState) -> Router {
     // Limit admin login to 1 request at a time
@@ -57,3 +81,19 @@ pub fn router(state: ApiState) -> Router {
 async fn api_fallback() -> (StatusCode, &'static str) {
     (StatusCode::NOT_FOUND, "Not found")
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        room::join, room::vote, room::get_musics, room::get_music_detail,
+    ),
+    components(
+        schemas(
+            crate::utils::jwt::UserToken, room::VoteBody, room::Music
+        )
+    ),
+    tags(
+        (name = "DJ-Store API", description = "API to manage DJ-Store rooms")
+    )
+)]
+pub struct ApiDoc;

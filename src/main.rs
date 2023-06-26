@@ -3,8 +3,10 @@ use migration::{Migrator, MigratorTrait};
 use sea_orm::Database;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
-use crate::api::state::ApiState;
+use crate::api::{state::ApiState, ApiDoc};
 
 mod api;
 #[cfg(feature = "embed-ui")]
@@ -22,6 +24,8 @@ async fn main() {
         admin_username => "ADMIN_USERNAME"
         admin_password => "ADMIN_PASSWORD_HASH"
     );
+    let addr = utils::get_addr();
+
 
     // JWT secret should be in the state ?
     utils::jwt::set_jwt_secret(&jwt_secret);
@@ -40,15 +44,10 @@ async fn main() {
     let api = api.layer(TraceLayer::new_for_http());
     let api = utils::cors::init(api);
     let app = Router::new().nest("/api", api);
+    let app =
+        app.merge(SwaggerUi::new("/api/swagger-ui").url("/api/openapi.json", ApiDoc::openapi()));
     #[cfg(feature = "embed-ui")]
     let app = ui::mount(app);
-
-    // Start listening on the given address.
-    let addr = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "0.0.0.0:3000".to_string())
-        .parse()
-        .unwrap();
 
     #[cfg(not(feature = "https"))]
     let server = axum::Server::bind(&addr).serve(app.into_make_service());

@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::room_id::RoomID;
@@ -42,7 +43,7 @@ impl User {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserToken {
     access_token: String,
     token_type: &'static str,

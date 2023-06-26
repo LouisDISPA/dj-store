@@ -3,6 +3,7 @@ use std::{
     fmt::{Display, Formatter},
     str::FromStr,
 };
+use utoipa::IntoParams;
 
 /// The room identifier.
 ///
@@ -20,8 +21,9 @@ use std::{
 /// assert_eq!(room_str, "ABCDEF");
 /// ```
 ///
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, IntoParams)]
 pub struct RoomID {
+    #[param(value_type = String, rename = "room_id")]
     value: u32,
 }
 
