@@ -48,6 +48,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
   coverage:
+    name: stable / coverage
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -59,6 +60,10 @@ jobs:
         run: rustup update stable
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: coverage
       - name: Generate code coverage
         run: cargo llvm-cov --locked --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
