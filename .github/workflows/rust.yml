@@ -67,7 +67,7 @@ jobs:
         with:
           key: coverage
       - name: Generate code coverage
-        run: cargo llvm-cov --locked --lcov --output-path lcov.info
+        run: cargo llvm-cov --locked --workspace --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
