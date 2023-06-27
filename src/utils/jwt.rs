@@ -159,12 +159,13 @@ pub fn set_jwt_secret(secret: &str) {
 
     // This is safe because JWT_SECRET is only initialized once at the start of the program
 
-    let res = JWT_SECRET.set(JwtKeyPair {
+    let _res = JWT_SECRET.set(JwtKeyPair {
         encoder: EncodingKey::from_secret(secret_bytes),
         decoder: DecodingKey::from_secret(secret_bytes),
     });
 
-    if res.is_err() {
+    #[cfg(not(test))]
+    if _res.is_err() {
         panic!("JWT_SECRET is already set");
     }
 }
