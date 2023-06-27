@@ -198,7 +198,7 @@ impl ErrorVariant {
     fn to_variant(&self) -> syn::Variant {
         match self {
             ErrorVariant::InternalError => parse_quote!(
-                #[doc = "Internal error"]
+                #[doc = "Internal error: {0}"]
                 #[status(axum::http::status::StatusCode::INTERNAL_SERVER_ERROR)]
                 InternalError(
                     #[from]

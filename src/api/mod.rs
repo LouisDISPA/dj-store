@@ -14,6 +14,8 @@ use self::state::ApiState;
 mod admin;
 mod room;
 mod search;
+#[cfg(test)]
+mod test;
 mod websocket;
 
 pub mod state;

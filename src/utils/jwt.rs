@@ -231,3 +231,12 @@ mod tests {
         assert_eq!(user.unwrap_err(), JwtVerifyError::NotValidYet);
     }
 }
+
+#[cfg(test)]
+pub(crate) fn admin_token() -> String {
+    use chrono::Duration;
+
+    let exp = Utc::now() + Duration::hours(5);
+    let token = User::new_admin().into_token(exp).access_token;
+    format!("Bearer {token}")
+}
