@@ -61,4 +61,4 @@ ENV DATABASE_URL=sqlite://db.sqlite
 ENV RUST_LOG=warn,dj_store=info
 
 EXPOSE 3000
-ENTRYPOINT ["/dj-store" "0.0.0.0:3000"]
+ENTRYPOINT ["/dj-store", "0.0.0.0:3000"]
