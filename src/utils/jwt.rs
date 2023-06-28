@@ -7,6 +7,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use tokio::sync::OnceCell;
 use uuid::Uuid;
 
@@ -80,10 +81,10 @@ impl<S: Send + Sync> FromRequestParts<S> for User {
     }
 }
 
-#[derive(Debug, displaydoc::Display)]
+#[derive(Debug, PartialEq, Eq, displaydoc::Display, Error)]
 pub enum JwtVerifyError {
     /// The JWT is invalid: {0}
-    InvalidJwt(String),
+    InvalidJwt(#[from] jsonwebtoken::errors::Error),
     /// JWT Token not valid yet
     NotValidYet,
     /// JWT Token expired
@@ -121,10 +122,7 @@ pub fn sign(user: User, exp: DateTime<Utc>) -> String {
 
 pub fn verify(token: &str) -> Result<User, JwtVerifyError> {
     let token_decode = jsonwebtoken::decode(token, get_jwt_decoder(), &Validation::default());
-    let claim: Claims = match token_decode {
-        Ok(token_data) => token_data.claims,
-        Err(e) => return Err(JwtVerifyError::InvalidJwt(e.to_string())),
-    };
+    let claim: Claims = token_decode?.claims;
     let now = Utc::now().timestamp();
     if claim.iat > now {
         return Err(JwtVerifyError::NotValidYet);
@@ -161,12 +159,13 @@ pub fn set_jwt_secret(secret: &str) {
 
     // This is safe because JWT_SECRET is only initialized once at the start of the program
 
-    let res = JWT_SECRET.set(JwtKeyPair {
+    let _res = JWT_SECRET.set(JwtKeyPair {
         encoder: EncodingKey::from_secret(secret_bytes),
         decoder: DecodingKey::from_secret(secret_bytes),
     });
 
-    if res.is_err() {
+    #[cfg(not(test))]
+    if _res.is_err() {
         panic!("JWT_SECRET is already set");
     }
 }
@@ -189,4 +188,56 @@ fn get_jwt_encoder() -> &'static EncodingKey {
 fn get_jwt_decoder() -> &'static DecodingKey {
     // This is safe because JWT_SECRET is only initialized once at the start of the program
     &JWT_SECRET.get().expect("JWT secret not set").decoder
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Duration, Utc};
+
+    #[test]
+    fn test_jwt() {
+        set_jwt_secret("secret");
+        let user = User::new_user(RoomID::new(0));
+        let exp = Utc::now() + Duration::hours(1);
+        let token = sign(user, exp);
+        let user = verify(&token).unwrap();
+        assert_eq!(
+            user.role,
+            Role::User {
+                room_id: RoomID::new(0)
+            }
+        );
+
+        let user = User::new_user(RoomID::new(0));
+        let exp = Utc::now() - Duration::hours(1);
+        let token = sign(user, exp);
+        let user = verify(&token);
+        assert!(user.is_err());
+
+        let user = User::new_user(RoomID::new(0));
+        let exp = Utc::now() + Duration::hours(2);
+        let token = jsonwebtoken::encode(
+            &Header::default(),
+            &Claims {
+                user,
+                iat: (Utc::now() + Duration::hours(1)).timestamp(),
+                exp: exp.timestamp(),
+            },
+            get_jwt_encoder(),
+        )
+        .unwrap();
+        let user = verify(&token);
+        assert!(user.is_err());
+        assert_eq!(user.unwrap_err(), JwtVerifyError::NotValidYet);
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn admin_token() -> String {
+    use chrono::Duration;
+
+    let exp = Utc::now() + Duration::hours(5);
+    let token = User::new_admin().into_token(exp).access_token;
+    format!("Bearer {token}")
 }

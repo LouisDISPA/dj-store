@@ -39,3 +39,17 @@ fn parse_allow_origin(var: &str) -> AllowOrigin {
         origins.into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_allow_origin() {
+        let var = "http://localhost:3000,http://localhost:3001";
+        let _ = parse_allow_origin(var);
+
+        let var = "*";
+        let _ = parse_allow_origin(var);
+    }
+}
