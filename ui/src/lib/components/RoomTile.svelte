@@ -3,13 +3,21 @@
 	import type { RoomId } from '$lib/types';
 	import { goto, timeFormat } from '$lib/utils';
 
-	export let id: RoomId;
-	export let user_count: number;
-	export let expiration: Date;
-	export let creation: Date;
-
-	export let onDelete: ((id: RoomId) => void) | undefined = undefined;
-	export let onShare: ((id: RoomId) => void) | undefined = undefined;
+	let {
+		id,
+		user_count,
+		expiration,
+		creation,
+		onDelete = undefined,
+		onShare = undefined
+	}: {
+		id: RoomId;
+		user_count: number;
+		expiration: Date;
+		creation: Date;
+		onDelete?: ((id: RoomId) => void) | undefined;
+		onShare?: ((id: RoomId) => void) | undefined;
+	} = $props();
 </script>
 
 <div class="card w-96 bg-base-100 shadow-xl">

@@ -7,7 +7,6 @@ use axum::{
     },
     http::StatusCode,
     response::Response,
-    Error,
 };
 // use deku::{DekuContainerWrite, DekuUpdate, DekuWrite};
 use serde::Serialize;
@@ -79,7 +78,7 @@ async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receive
             }
             Ok(vote) = room_receiver.recv() => {
                 let encoded = serde_json::to_string(&vote).unwrap();
-                if let Err(e) = socket.send(Message::Text(encoded)).await {
+                if let Err(e) = socket.send(Message::Text(encoded.into())).await {
                     log::error!("Error sending vote: {}", e);
                     break;
                 }
@@ -90,9 +89,10 @@ async fn handle_room_websocket(mut socket: WebSocket, mut room_receiver: Receive
 }
 
 #[allow(clippy::needless_return)]
-fn is_admin(msg: Option<Result<Message, Error>>) -> bool {
+fn is_admin(msg: Option<Result<Message, axum::Error>>) -> bool {
     match msg {
         Some(Ok(Message::Text(token))) => {
+            let token: &str = &token;
             match jwt::verify(token.trim()) {
                 Ok(user) if user.role == Role::Admin => {
                     log::info!("Admin connected to room");

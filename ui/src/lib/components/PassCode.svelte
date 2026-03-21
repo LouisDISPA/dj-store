@@ -8,12 +8,13 @@
 	 * <PassCode bind:input />
 	 * ```
 	 */
-	export let input: string;
-
-	/**
-	 * The function to call when the user presses enter.
-	 */
-	export let onSubmit: (() => void) | undefined = undefined;
+	let {
+		input = $bindable(''),
+		onSubmit = undefined
+	}: {
+		input?: string;
+		onSubmit?: (() => void) | undefined;
+	} = $props();
 
 	const codeSize = 6;
 	const inputIds = [...Array(codeSize).keys()].map((i) => `input-${i}`);
@@ -150,18 +151,18 @@
 </script>
 
 <div class="passcode-area">
-	{#each [0, Math.ceil(codeSize / 2)] as block_number}
+	{#each [0, Math.ceil(codeSize / 2)] as block_number (block_number)}
 		<div class="passcode-block">
-			{#each inputIds.slice(block_number, block_number + Math.ceil(codeSize / 2)) as id}
+			{#each inputIds.slice(block_number, block_number + Math.ceil(codeSize / 2)) as id (id)}
 				<input
 					{id}
 					type="text"
 					autocomplete="off"
 					spellcheck="false"
 					maxlength="1"
-					class="input input-bordered w-20 h-20 text-4xl text-center shadow-lg"
-					on:input={handleInput}
-					on:keydown={keyDown}
+					class="input w-20 h-20 text-4xl text-center shadow-lg"
+					oninput={handleInput}
+					onkeydown={keyDown}
 				/>
 			{/each}
 		</div>
@@ -176,7 +177,7 @@
     flex-direction: row
     flex-wrap: wrap
 
-.passcode-block 
+.passcode-block
     padding: 10px 20px
 
 .passcode-block > input

@@ -1,9 +1,17 @@
 <script lang="ts">
-	export let value = '';
-	export let label: string | undefined = undefined;
-	export let placeholder = '...';
-	export let type = 'text';
-	export let onSubmit: ((value: string) => void) | undefined = undefined;
+	let {
+		value = $bindable(''),
+		label = undefined,
+		placeholder = '...',
+		type = 'text',
+		onSubmit = undefined
+	}: {
+		value?: string;
+		label?: string | undefined;
+		placeholder?: string;
+		type?: string;
+		onSubmit?: ((value: string) => void) | undefined;
+	} = $props();
 
 	function onChange(event: Event) {
 		value = (event.target as HTMLInputElement).value;
@@ -15,18 +23,10 @@
 	}
 </script>
 
-<div class="form-control">
+<fieldset class="fieldset">
 	{#if label}
-		<div class="label">
-			<span class="label-text">{label}</span>
-		</div>
+		<legend class="fieldset-legend">{label}</legend>
 	{/if}
 
-	<input
-		{type}
-		{placeholder}
-		class="input input-bordered"
-		on:change={onChange}
-		on:keypress={onKeypress}
-	/>
-</div>
+	<input {type} {placeholder} class="input" onchange={onChange} onkeypress={onKeypress} />
+</fieldset>

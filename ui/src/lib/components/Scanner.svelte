@@ -9,9 +9,9 @@
 
 	const millisecondsBetweenScans = 500;
 
-	let video: HTMLVideoElement | null;
-	let canvas: HTMLCanvasElement | null;
-	$: context = canvas?.getContext('2d', { willReadFrequently: true });
+	let video = $state<HTMLVideoElement | null>(null);
+	let canvas = $state<HTMLCanvasElement | null>(null);
+	let context = $derived(canvas?.getContext('2d', { willReadFrequently: true }));
 
 	onMount(startMediaStream);
 
@@ -98,8 +98,8 @@
 <Stack>
 	<div class="scanner">
 		<div class="scanner__aspect-ratio-container">
-			<canvas bind:this={canvas} class="scanner__canvas" />
-			<video bind:this={video} on:canplay={handleCanPlay} class="scanner__video">
+			<canvas bind:this={canvas} class="scanner__canvas"></canvas>
+			<video bind:this={video} oncanplay={handleCanPlay} class="scanner__video">
 				<track kind="captions" />
 			</video>
 			<ScannerBorders />

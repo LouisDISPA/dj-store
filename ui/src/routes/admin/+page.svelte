@@ -51,7 +51,7 @@
 
 {#if rooms !== undefined}
 	<div class="flex flex-wrap gap-4 m-4">
-		{#each rooms as room}
+		{#each rooms as room (room.id)}
 			<RoomTile {...room} {onDelete} {onShare} />
 		{/each}
 	</div>

@@ -3,22 +3,25 @@
 	import { goto } from '$lib/utils';
 	import Button from '$lib/components/Button.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children?: Snippet } = $props();
 </script>
 
 {#if $auth?.role !== 'Admin'}
 	<Modal>
-		<span slot="title">You are not connect</span>
-		<span slot="body">
+		{#snippet title()}You are not connect{/snippet}
+		{#snippet body()}
 			<p>
 				You can't access this page, <br />
 				please connect as an admin.
 			</p>
-		</span>
-		<span slot="actions">
+		{/snippet}
+		{#snippet actions()}
 			<Button label="Home" type="neutral" onSubmit={() => goto('/')} />
 			<Button label="Login" type="primary" onSubmit={() => goto('/login')} />
-		</span>
+		{/snippet}
 	</Modal>
 {:else}
-	<slot />
+	{@render children?.()}
 {/if}

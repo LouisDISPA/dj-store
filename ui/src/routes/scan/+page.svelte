@@ -6,11 +6,11 @@
 </script>
 
 <Modal>
-	<span slot="title">Scan QR Code</span>
-	<span slot="body">
+	{#snippet title()}Scan QR Code{/snippet}
+	{#snippet body()}
 		<Scanner />
-	</span>
-	<span slot="actions">
+	{/snippet}
+	{#snippet actions()}
 		<Button label="Cancel" type="primary" onSubmit={() => goto('/')} />
-	</span>
+	{/snippet}
 </Modal>

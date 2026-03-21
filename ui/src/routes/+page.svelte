@@ -6,16 +6,9 @@
 	import { auth, disconnect, joinRoom } from '$lib/auth';
 	import Modal from '$lib/components/Modal.svelte';
 
-	let input = '';
-	let loading = false;
-	let error: string | undefined;
-
-	if (error) {
-		setTimeout(() => {
-			error = undefined;
-		}, 3000);
-		goto('/');
-	}
+	let input = $state('');
+	let loading = $state(false);
+	let error: string | undefined = $state(undefined);
 
 	async function goToPage() {
 		if (input.length !== 6) {
@@ -26,7 +19,7 @@
 		try {
 			await joinRoom(input);
 			await goto(`/r/${input}`);
-		} catch (e) {
+		} catch {
 			loading = false;
 			error = "Couldn't connect to room";
 			setTimeout(() => {
@@ -45,7 +38,7 @@
 		}
 	}
 
-	let videoAvailable = true;
+	let videoAvailable = $state(true);
 	onMount(async () => {
 		const devices = await navigator.mediaDevices.enumerateDevices();
 		videoAvailable = !devices.some((device) => device.kind === 'videoinput');
@@ -58,15 +51,15 @@
 
 {#if $auth?.room_id}
 	<Modal>
-		<span slot="title">Connected</span>
-		<span slot="body">
+		{#snippet title()}Connected{/snippet}
+		{#snippet body()}
 			You are already connected to room "{$auth?.room_id}". <br />
 			Do you want to reconnect?
-		</span>
-		<span slot="actions">
+		{/snippet}
+		{#snippet actions()}
 			<Button label="Cancel" type="primary" onSubmit={disconnect} />
 			<Button label="Reconnect" type="primary" onSubmit={reconnect} />
-		</span>
+		{/snippet}
 	</Modal>
 {:else}
 	<div id="page">

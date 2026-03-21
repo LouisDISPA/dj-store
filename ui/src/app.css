@@ -1,8 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@tailwind variants;
+@import 'tailwindcss';
+@plugin "daisyui" {
+	themes: night --default;
+}
+@plugin "@tailwindcss/typography";
 
 body {
-	@apply bg-base-200 min-h-screen;
+	@apply min-h-screen;
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
-	export let onSubmit: (search: string) => Promise<void>;
+	let { onSubmit }: { onSubmit: (search: string) => Promise<void> } = $props();
 
-	let loading = false;
+	let loading = $state(false);
 
 	async function submit() {
 		loading = true;
@@ -12,13 +12,20 @@
 	let input: HTMLInputElement;
 </script>
 
-<form class="form-control" on:submit|preventDefault={() => submit()}>
-	<id class="input-group m-2">
-		<input bind:this={input} type="text" placeholder="Search…" class="input input-bordered pb-0" />
+<form
+	onsubmit={(e) => {
+		e.preventDefault();
+		submit();
+	}}
+>
+	<div class="join m-2">
+		<input bind:this={input} type="text" placeholder="Search…" class="input join-item pb-0" />
 		{#if loading}
-			<button class="btn btn-square loading" />
+			<button class="btn btn-square join-item" aria-label="Searching">
+				<span class="loading loading-spinner"></span>
+			</button>
 		{:else}
-			<button class="btn btn-square">
+			<button class="btn btn-square join-item" aria-label="Search">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="h-6 w-6"
@@ -34,5 +41,5 @@
 				>
 			</button>
 		{/if}
-	</id>
+	</div>
 </form>

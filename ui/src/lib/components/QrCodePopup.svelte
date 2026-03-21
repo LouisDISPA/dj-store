@@ -3,8 +3,13 @@
 	import Button from './Button.svelte';
 	import Modal from './Modal.svelte';
 
-	export let url: string;
-	export let onClose: (() => void) | undefined = undefined;
+	let {
+		url,
+		onClose = undefined
+	}: {
+		url: string;
+		onClose?: (() => void) | undefined;
+	} = $props();
 
 	let canvas: HTMLCanvasElement;
 	onMount(async () => {
@@ -17,16 +22,14 @@
 	});
 </script>
 
-<div class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50">
-	<Modal>
-		<span slot="body">
-			<div class="p-6 mx-3 bg-white rounded-xl">
-				<canvas class="w-full" bind:this={canvas} />
-			</div>
-			<h3 class="text-sm text-center pt-4 pb-3">{url}</h3>
-		</span>
-		<span slot="actions">
-			<Button label="Close" type="primary" onSubmit={onClose} />
-		</span>
-	</Modal>
-</div>
+<Modal>
+	{#snippet body()}
+		<div class="p-6 mx-3 bg-white rounded-xl">
+			<canvas class="w-full" bind:this={canvas}></canvas>
+		</div>
+		<h3 class="text-sm text-center pt-4 pb-3">{url}</h3>
+	{/snippet}
+	{#snippet actions()}
+		<Button label="Close" type="primary" onSubmit={onClose} />
+	{/snippet}
+</Modal>

@@ -1,5 +1,5 @@
 use axum::{
-    body::{boxed, Full},
+    body::Body,
     extract::Path,
     http::{header, StatusCode},
     response::{IntoResponse, Response},
@@ -9,7 +9,7 @@ use rust_embed::RustEmbed;
 
 pub fn mount(app: Router) -> Router {
     app.route("/", get(index_handler))
-        .route("/*path", get(file_handler))
+        .route("/{*path}", get(file_handler))
 }
 
 async fn index_handler() -> impl IntoResponse {
@@ -32,27 +32,21 @@ struct Asset;
 
 fn asset(path: &str) -> Response {
     match Asset::get(path) {
-        Some(content) => {
-            let body = boxed(Full::from(content.data));
-            Response::builder()
+        Some(content) => Response::builder()
+            .header(header::CONTENT_TYPE, content.metadata.mimetype())
+            .header(header::CACHE_CONTROL, "max-age=86400")
+            .body(Body::from(content.data.into_owned()))
+            .unwrap(),
+        None => match Asset::get("fallback.html") {
+            Some(content) => Response::builder()
+                .status(StatusCode::NOT_FOUND)
                 .header(header::CONTENT_TYPE, content.metadata.mimetype())
                 .header(header::CACHE_CONTROL, "max-age=86400")
-                .body(body)
-                .unwrap()
-        }
-        None => match Asset::get("fallback.html") {
-            Some(content) => {
-                let body = boxed(Full::from(content.data));
-                Response::builder()
-                    .status(StatusCode::NOT_FOUND)
-                    .header(header::CONTENT_TYPE, content.metadata.mimetype())
-                    .header(header::CACHE_CONTROL, "max-age=86400")
-                    .body(body)
-                    .unwrap()
-            }
+                .body(Body::from(content.data.into_owned()))
+                .unwrap(),
             None => Response::builder()
                 .status(StatusCode::NOT_FOUND)
-                .body(boxed(Full::from("404 whaat")))
+                .body(Body::from("404 whaat"))
                 .unwrap(),
         },
     }

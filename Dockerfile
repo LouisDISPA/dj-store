@@ -16,7 +16,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 # --- Build the UI ---
 
-FROM node:18 as ui-builder
+FROM node:22 AS ui-builder
 WORKDIR /app 
 
 # Install dependencies

@@ -2,8 +2,6 @@
 	import { goto } from '$lib/utils';
 	import { auth, disconnect } from '$lib/auth';
 
-	export let direction: 'horizontal' | 'vertical';
-
 	function goToPage(href: string): () => void {
 		return () => goto(href);
 	}
@@ -25,16 +23,13 @@
 		{ label: 'About', action: goToPage('/about') }
 	];
 
-	$: menu_items = menu_basic.concat($auth?.role === 'Admin' ? menu_logged : menu_not_logged);
+	let menu_items = $derived(
+		menu_basic.concat($auth?.role === 'Admin' ? menu_logged : menu_not_logged)
+	);
 </script>
 
-<ul class="menu" class:menu-horizontal={direction === 'horizontal'}>
-	{#each menu_items as item}
-		<li>
-			<button
-				class="btn btn-link normal-case text-lg no-animation no-underline"
-				on:click={item.action}>{item.label}</button
-			>
-		</li>
-	{/each}
-</ul>
+{#each menu_items as item (item.label)}
+	<li>
+		<button onclick={item.action}>{item.label}</button>
+	</li>
+{/each}

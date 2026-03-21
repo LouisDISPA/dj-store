@@ -22,57 +22,61 @@
 		musics = await getMusics(auth_token, room_id);
 	}, 60000 * 5);
 
-	onMount(async () => {
-		musics = await getMusics(auth_token, room_id);
+	onMount(() => {
+		let socket: WebSocket | undefined;
 
-		if (musics === undefined) {
-			alert('You are not allowed to access this room.');
-			await goto('/admin');
-			return;
-		}
+		(async () => {
+			musics = await getMusics(auth_token, room_id);
 
-		const api_url = env.API_URL.replace('http', 'ws');
-		const socket = new WebSocket(`${api_url}/api/room/${room_id}/ws`);
-
-		socket.onmessage = async (event) => {
-			const { music_id, like } = JSON.parse(event.data);
-
-			const music = musics?.find((music) => music.id === music_id);
-			if (!music) {
-				const new_music: Music = await fetch(
-					`${env.API_URL}/api/room/${room_id}/music/${music_id}`,
-					{
-						method: 'GET',
-						headers: {
-							Authorization: `Bearer ${auth_token}`
-						}
-					}
-				).then((res) => res.json());
-				musics?.push(new_music);
-			} else {
-				music.votes += like ? 1 : -1;
+			if (musics === undefined) {
+				alert('You are not allowed to access this room.');
+				await goto('/admin');
+				return;
 			}
 
-			musics?.sort((a, b) => b.votes - a.votes);
-			musics = musics;
-		};
+			const api_url = env.API_URL.replace('http', 'ws');
+			socket = new WebSocket(`${api_url}/api/room/${room_id}/ws`);
 
-		socket.onopen = async () => {
-			socket.send(auth_token);
-		};
+			socket.onmessage = async (event) => {
+				const { music_id, like } = JSON.parse(event.data);
 
-		socket.onclose = (frame) => {
-			console.log(`WebSocket closed: ${frame.code} ${frame.reason}`);
-			alert('You have been disconnected from the room.');
-			goto('/admin');
-		};
+				const music = musics?.find((music) => music.id === music_id);
+				if (!music) {
+					const new_music: Music = await fetch(
+						`${env.API_URL}/api/room/${room_id}/music/${music_id}`,
+						{
+							method: 'GET',
+							headers: {
+								Authorization: `Bearer ${auth_token}`
+							}
+						}
+					).then((res) => res.json());
+					musics?.push(new_music);
+				} else {
+					music.votes += like ? 1 : -1;
+				}
 
-		socket.onerror = (error) => {
-			console.log(error);
-		};
+				musics?.sort((a, b) => b.votes - a.votes);
+				musics = musics;
+			};
+
+			socket.onopen = () => {
+				socket?.send(auth_token);
+			};
+
+			socket.onclose = (frame) => {
+				console.log(`WebSocket closed: ${frame.code} ${frame.reason}`);
+				alert('You have been disconnected from the room.');
+				goto('/admin');
+			};
+
+			socket.onerror = (error) => {
+				console.log(error);
+			};
+		})();
 
 		return () => {
-			socket.close();
+			socket?.close();
 			clearInterval(interval);
 		};
 	});

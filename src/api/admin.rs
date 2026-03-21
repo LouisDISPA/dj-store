@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use chrono::{DateTime, Duration, Utc};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 
 use entity::*;
@@ -21,7 +21,7 @@ use super::state::ApiState;
 #[derive(Debug, Deserialize)]
 pub struct LoginBody {
     username: String,
-    password: Secret<String>,
+    password: secrecy::SecretString,
 }
 
 #[api_macro::error]

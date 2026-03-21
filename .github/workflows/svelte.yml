@@ -3,7 +3,7 @@ on:
     branches: [main]
 name: Client
 env:
-  NODE_VERSION: 18
+  NODE_VERSION: 22
 jobs: 
   lint:
     runs-on: ubuntu-latest
@@ -11,9 +11,9 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
@@ -32,9 +32,9 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'

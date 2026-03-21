@@ -44,23 +44,29 @@ async fn main() {
     let app = ui::mount(app);
 
     // Start listening on the given address.
-    let addr = std::env::args()
+    let addr: std::net::SocketAddr = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "0.0.0.0:3000".to_string())
         .parse()
         .unwrap();
 
-    #[cfg(not(feature = "https"))]
-    let server = axum::Server::bind(&addr).serve(app.into_make_service());
+    log::info!("Listening on http://{}", addr);
 
     #[cfg(feature = "https")]
-    let server = utils::https::run_https_server(addr, app);
+    {
+        utils::https::run_https_server(addr, app).await;
+        return;
+    }
 
-    log::info!("Listening on http://{}", addr);
-    tokio::select! {
-        _ = signal::ctrl_c() => {
-            log::info!("Shutting down");
-        },
-        _ = server => {},
+    #[cfg(not(feature = "https"))]
+    {
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        let server = axum::serve(listener, app);
+        tokio::select! {
+            _ = signal::ctrl_c() => {
+                log::info!("Shutting down");
+            },
+            _ = server => {},
+        }
     }
 }

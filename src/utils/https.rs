@@ -38,10 +38,8 @@ pub async fn run_https_server(addr: SocketAddr, app: Router) {
         (None, None) => {
             log::info!("No TLS certificate provided, using HTTP");
 
-            axum::Server::bind(&addr)
-                .serve(app.into_make_service())
-                .await
-                .ok();
+            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+            axum::serve(listener, app).await.ok();
         }
         (None, Some(_)) => {
             eprintln!("Missing {CERT_KEY} env var");

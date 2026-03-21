@@ -26,7 +26,7 @@ pub fn router(state: ApiState) -> Router {
     let admin_login = post(admin::login).layer(ConcurrencyLimitLayer::new(1));
     let room_join = get(room::join).layer(ConcurrencyLimitLayer::new(10));
 
-    let handle_error = |err| async move {
+    let handle_error = |err: tower::BoxError| async move {
         log::error!("Unhandled error: {}", err);
         (StatusCode::INTERNAL_SERVER_ERROR, "Unhandled error")
     };
@@ -37,19 +37,19 @@ pub fn router(state: ApiState) -> Router {
         .buffer(128)
         .rate_limit(40, Duration::from_secs(5));
 
-    Router::<ApiState>::new()
+    Router::new()
         .layer(TraceLayer::new_for_http())
         .route("/admin/login", admin_login)
         .route("/room/all", get(admin::get_rooms))
         .route("/room", post(admin::create_room))
-        .route("/room/:room", delete(admin::delete_room))
-        .route("/room/:room/join", room_join)
-        .route("/room/:room/music/all", get(room::get_musics))
-        .route("/room/:room/music/voted", get(room::get_voted_musics))
-        .route("/room/:room/music/:music", get(room::get_music_detail))
-        .route("/room/:room/vote", post(room::vote))
-        .route("/room/:room/search", get(search::search).layer(rate_limit))
-        .route("/room/:room/ws", get(websocket::handle_request))
+        .route("/room/{room}", delete(admin::delete_room))
+        .route("/room/{room}/join", room_join)
+        .route("/room/{room}/music/all", get(room::get_musics))
+        .route("/room/{room}/music/voted", get(room::get_voted_musics))
+        .route("/room/{room}/music/{music}", get(room::get_music_detail))
+        .route("/room/{room}/vote", post(room::vote))
+        .route("/room/{room}/search", get(search::search).layer(rate_limit))
+        .route("/room/{room}/ws", get(websocket::handle_request))
         .with_state(state)
         .fallback(api_fallback)
 }
