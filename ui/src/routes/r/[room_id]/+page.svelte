@@ -34,7 +34,7 @@
 		try {
 			musics = await getSearch(auth_token, room_id, search);
 			searched = search;
-		} catch (err) {
+		} catch {
 			error = 'Search failed (retry later)';
 			setTimeout(() => (error = undefined), 3000);
 		}

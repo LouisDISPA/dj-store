@@ -5,10 +5,13 @@
 	import { auth, joinRoom, tryRecallUser } from '$lib/auth';
 	import Hero from '$lib/components/Hero.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children?: Snippet } = $props();
 
 	onMount(() => {
 		tryRecallUser();
-		joinRoom($page.params.room_id).catch(() => goto('/'));
+		joinRoom($page.params.room_id!).catch(() => goto('/'));
 	});
 </script>
 
@@ -17,5 +20,5 @@
 		<Spinner />
 	</Hero>
 {:else}
-	<slot />
+	{@render children?.()}
 {/if}

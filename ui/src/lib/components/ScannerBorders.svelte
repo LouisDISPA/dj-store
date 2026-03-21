@@ -1,8 +1,8 @@
 <div>
-	<div class="scanner-border scanner-border--top-left" />
-	<div class="scanner-border scanner-border--top-right" />
-	<div class="scanner-border scanner-border--bottom-left" />
-	<div class="scanner-border scanner-border--bottom-right" />
+	<div class="scanner-border scanner-border--top-left"></div>
+	<div class="scanner-border scanner-border--top-right"></div>
+	<div class="scanner-border scanner-border--bottom-left"></div>
+	<div class="scanner-border scanner-border--bottom-right"></div>
 </div>
 
 <style>

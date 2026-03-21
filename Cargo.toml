@@ -14,28 +14,29 @@ members = [".", "entity", "migration", "deezer-rs", "api-macro"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-axum = { version = "0.6", features = ["headers", "ws"] }
-tower = { version = "0.4", features = ["limit", "buffer"] }
-tower-http = { version = "0.4", features = ["cors", "trace"] }
-axum-server = { version = "0.5", default-features = false, features = ["tls-rustls"], optional = true}
+axum = { version = "0.8", features = ["ws"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
+headers = "0.4"
+tower = { version = "0.5", features = ["limit", "buffer"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+axum-server = { version = "0.7", default-features = false, features = ["tls-rustls"], optional = true}
 
-rand = "0.8"
+rand = "0.9"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "fast-rng", "serde"] }
-jsonwebtoken = { version = "8.3.0", default-features = false }
-secrecy = { version = "0.8.0", features = ["serde"] }
-argon2 = { version = "0.5.0", features = ["std"] }
+jsonwebtoken = "9"
+secrecy = { version = "0.10", features = ["serde"] }
+argon2 = { version = "0.5", features = ["std"] }
 
-rust-embed = { version = "6", features = ["mime-guess"], optional = true}
+rust-embed = { version = "8", features = ["mime-guess"], optional = true}
 
-sea-orm = { version = "0.11.0", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
+sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# deku = "0.15.1"
 
 dotenvy = "0.15"
 displaydoc = "0.2"
-thiserror = "1.0"
+thiserror = "2"
 log = "0.4"
 tracing-subscriber = "0.3"
 

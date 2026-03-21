@@ -1,14 +1,26 @@
 <script lang="ts">
 	type SubmitFunstion = () => void;
 	type ButtonType = 'neutral' | 'primary' | 'secondary' | 'accent' | 'ghost' | 'error';
-	export let label: string;
-	export let onSubmit: SubmitFunstion | undefined = undefined;
-	export let type: ButtonType = 'neutral';
-	export let disabled = false;
-	export let loading = false;
-	export let no_marging = false;
-	export let outlined = false;
-	export let normal_case = false;
+
+	let {
+		label,
+		onSubmit = undefined,
+		type = 'neutral',
+		disabled = false,
+		loading = false,
+		no_marging = false,
+		outlined = false,
+		normal_case = false
+	}: {
+		label: string;
+		onSubmit?: SubmitFunstion | undefined;
+		type?: ButtonType;
+		disabled?: boolean;
+		loading?: boolean;
+		no_marging?: boolean;
+		outlined?: boolean;
+		normal_case?: boolean;
+	} = $props();
 
 	function submit() {
 		if (onSubmit) onSubmit();
@@ -23,9 +35,11 @@
 	class:btn-outline={outlined}
 	class:normal-case={normal_case}
 	class:m-2={!no_marging}
-	class:loading
-	on:click={submit}
+	onclick={submit}
 	{disabled}
 >
+	{#if loading}
+		<span class="loading loading-spinner"></span>
+	{/if}
 	{label}
 </button>

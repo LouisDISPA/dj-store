@@ -1,10 +1,11 @@
 use axum::{
     extract::FromRequestParts,
-    headers::{authorization::Bearer, Authorization},
     http::{request::Parts, StatusCode},
-    RequestPartsExt, TypedHeader,
+    RequestPartsExt,
 };
+use axum_extra::TypedHeader;
 use chrono::{DateTime, Utc};
+use headers::{authorization::Bearer, Authorization};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
@@ -58,7 +59,6 @@ impl User {
     }
 }
 
-#[axum::async_trait]
 impl<S: Send + Sync> FromRequestParts<S> for User {
     type Rejection = StatusCode;
 

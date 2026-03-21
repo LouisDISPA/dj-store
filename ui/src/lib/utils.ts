@@ -7,6 +7,7 @@ export const env = {
 };
 
 export async function goto(path: string) {
+	// eslint-disable-next-line svelte/no-navigation-without-resolve
 	await svelteGoto(env.BASE_HREF + path);
 }
 
